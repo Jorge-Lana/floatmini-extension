@@ -93,7 +93,7 @@ export const ExtensionDownloader: React.FC = () => {
             )}
           </button>
           <span className="text-xs text-slate-400">
-            Código aberto · 100% local · Chrome 116+
+            Código aberto · 100% local · Chrome 116+ · Firefox 151+
           </span>
           <a
             href={SUPPORT_URL}

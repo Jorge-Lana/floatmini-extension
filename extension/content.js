@@ -43,7 +43,8 @@
   function shadowRootOf(el) {
     if (el.shadowRoot) return el.shadowRoot;
     try {
-      return chrome.dom?.openOrClosedShadowRoot?.(el) || null;
+      // Chrome: chrome.dom; Firefox: propriedade disponível só para extensões.
+      return chrome.dom?.openOrClosedShadowRoot?.(el) || el.openOrClosedShadowRoot || null;
     } catch {
       return null;
     }

@@ -35,14 +35,16 @@ npm run build      # build do site em dist/
 npm run lint       # TypeScript + verificação da extensão
 npm test           # testes do content script (DOM simulado com jsdom)
 npm run check:ext  # só a verificação da extensão
-npm run zip:ext    # gera dist-extension/floatmini-extension-<versão>.zip
+npm run zip:ext    # gera os pacotes para Chrome e Firefox em dist-extension/
+npm run zip:chrome # só o pacote da Chrome Web Store
+npm run zip:firefox # só o pacote do Firefox (addons.mozilla.org)
 ```
 
 `check:ext` (em `scripts/check-extension.mjs`) pega os erros que fazem a extensão quebrar no navegador sem aviso: arquivo referenciado que não existe, `<script>` ou `onclick` inline (bloqueados pelo CSP do Manifest V3), API do Chrome usada sem a permissão no manifest e erro de sintaxe.
 
 ## Como funciona o "sempre no topo"
 
-A extensão usa a API **Document Picture-in-Picture** (Chrome 116+), que abre uma janela do sistema operacional que fica por cima de qualquer programa. O vídeo da página é movido para essa janela e devolvido ao lugar original quando ela fecha.
+A extensão usa a API **Document Picture-in-Picture** (Chrome 116+ e Firefox 151+), que abre uma janela do sistema operacional que fica por cima de qualquer programa. O vídeo da página é movido para essa janela e devolvido ao lugar original quando ela fecha.
 
 O navegador só permite abrir essa janela logo após um clique ou tecla **dentro da página**. Por isso `Alt + P` é tratado pelo próprio content script, e os pedidos vindos do popup ou do menu de contexto mostram um botão na página pedindo um clique.
 

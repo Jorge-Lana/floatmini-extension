@@ -2,11 +2,13 @@
 
 Extensão de navegador (Manifest V3) que coloca o vídeo do **YouTube**, a música do **YouTube Music** ou do **Spotify Web** numa janela compacta que fica **sempre por cima** dos outros programas, usando a API Document Picture-in-Picture do Chrome.
 
-Requer Chrome, Edge, Brave ou Opera na versão 116 ou mais nova.
+Requer Chrome, Edge, Brave ou Opera 116+, ou **Firefox 151+** (desktop).
 
 ---
 
 ## 🚀 Como instalar
+
+> **Firefox:** instale pelo addons.mozilla.org. Para testar sem publicar, abra `about:debugging#/runtime/this-firefox`, clique em **Carregar extensão temporária** e escolha o `manifest.json` de dentro do zip `floatmini-firefox-<versão>.zip` descompactado.
 
 1. **Descompacte** o `.zip` numa pasta fixa (por exemplo, `Documentos/FloatMini`). Se você clonou o repositório, use a pasta `extension/`.
 2. **Abra a página de extensões:**
