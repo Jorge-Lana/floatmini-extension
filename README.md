@@ -56,6 +56,10 @@ O FloatMini é gratuito e mantido no tempo livre. Se ele te ajuda, considere [pa
 
 ---
 
+## 🔒 Privacidade
+
+O FloatMini não coleta nem envia nenhum dado. Detalhes em [PRIVACY.md](PRIVACY.md).
+
 ## 📄 Licença
 
 [GPL-3.0](LICENSE). Você pode usar, estudar, modificar e redistribuir o FloatMini, desde que versões modificadas também sejam distribuídas com o código aberto sob a mesma licença.
