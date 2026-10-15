@@ -38,7 +38,10 @@ npm run check:ext  # só a verificação da extensão
 npm run zip:ext    # gera os pacotes para Chrome e Firefox em dist-extension/
 npm run zip:chrome # só o pacote da Chrome Web Store
 npm run zip:firefox # só o pacote do Firefox (addons.mozilla.org)
+npm run version:set -- 1.3.4  # muda a versão no manifest e no package.json
 ```
+
+Novas versões são publicadas nas lojas pelo GitHub Actions ao criar uma tag `vX.Y.Z`. Passo a passo em [docs/RELEASE.md](docs/RELEASE.md).
 
 `check:ext` (em `scripts/check-extension.mjs`) pega os erros que fazem a extensão quebrar no navegador sem aviso: arquivo referenciado que não existe, `<script>` ou `onclick` inline (bloqueados pelo CSP do Manifest V3), API do Chrome usada sem a permissão no manifest e erro de sintaxe.
 
