@@ -1,7 +1,5 @@
 # Como lançar uma nova versão
 
-> **Ativação pendente:** os workflows estão em `docs/workflows/`. Para ativar, mova os dois arquivos para `.github/workflows/` pelo site do GitHub (abra o arquivo → ✏️ Editar → troque o caminho do nome para `.github/workflows/ci.yml` → *Commit changes*). Depois apague este aviso.
-
 O repositório tem dois workflows do GitHub Actions (em `.github/workflows/`):
 
 | Workflow | Quando roda | O que faz |
