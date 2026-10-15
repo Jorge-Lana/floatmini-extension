@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "FloatMini - Janela Flutuante Always-on-Top",
+  "version": "1.3.2",
+  "description": "Mini janela flutuante sempre no topo para YouTube, YouTube Music, Spotify e vídeos da web.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "scripting",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "FloatMini - Janela flutuante sempre no topo",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://m.youtube.com/*",
+        "https://music.youtube.com/*",
+        "https://open.spotify.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "toggle-float": {
+      "description": "Abrir/fechar a janela flutuante (na página, Alt+P já funciona sem configurar)"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

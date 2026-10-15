@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FloatMini</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <img class="icon-badge" src="icons/icon48.png" alt="">
+      <div>
+        <h1 class="brand-title">FloatMini</h1>
+        <p class="brand-sub">Janela flutuante sempre no topo</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+    <button id="btn-float" class="btn-primary" type="button">🗗 Flutuar mídia desta aba</button>
+    <p class="hint">
+      Mais rápido: na página do vídeo, aperte <kbd>Alt</kbd> + <kbd>P</kbd>
+      ou clique no ícone de janela flutuante na barra do player.
+    </p>
+    <p id="status" class="status" role="status" hidden></p>
+
+    <div class="section-title">Controles rápidos</div>
+    <div class="quick-controls-grid">
+      <button class="mini-ctrl-btn" type="button" data-action="SEEK" data-seconds="-10" title="Voltar 10 segundos">⏪ 10s</button>
+      <button class="mini-ctrl-btn" type="button" data-action="SEEK" data-seconds="10" title="Avançar 10 segundos">10s ⏩</button>
+      <button class="mini-ctrl-btn" type="button" data-action="SHUFFLE" title="Ordem aleatória (YT Music, Spotify, playlists do YouTube)">🔀 Aleatório</button>
+      <button class="mini-ctrl-btn" type="button" data-action="REPEAT" title="Alterna os modos de repetição do site">🔁 Repetir</button>
+    </div>
+
+    <div class="section-title">Tamanho da janela de vídeo</div>
+    <div class="size-selector">
+      <button class="size-btn" type="button" data-size="auto" title="480×270">Auto</button>
+      <button class="size-btn" type="button" data-size="340x190">Mini</button>
+      <button class="size-btn" type="button" data-size="480x270">Médio</button>
+      <button class="size-btn" type="button" data-size="640x360">Grande</button>
+    </div>
+
+    <form id="url-form" class="quick-url-box">
+      <label for="url-input">Abrir um link numa janela compacta:</label>
+      <div class="input-row">
+        <input type="url" id="url-input" placeholder="https://www.youtube.com/watch?v=..." required>
+        <button type="submit">Abrir</button>
+      </div>
+    </form>
+  </main>
+
+  <footer class="footer">
+    <span><kbd>Alt</kbd>+<kbd>P</kbd> flutuar</span>
+    <a class="support-link" href="https://buymeacoffee.com/jorgelana" target="_blank" rel="noopener noreferrer" title="Apoie o FloatMini no Buy Me a Coffee">☕ Apoie o projeto</a>
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
