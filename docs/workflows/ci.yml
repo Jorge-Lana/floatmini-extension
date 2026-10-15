@@ -1,0 +1,51 @@
+name: CI
+
+# Roda em todo PR e em todo push na main: verifica, testa e gera os pacotes.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      - name: Lint (TypeScript + verificação da extensão)
+        run: npm run lint
+
+      - name: Testes
+        run: npm test
+
+      - name: Build do site
+        run: npm run build
+
+      - name: Gerar pacotes (Chrome e Firefox)
+        run: npm run zip:ext
+
+      - name: Validar pacote do Firefox (web-ext lint)
+        run: |
+          VERSION=$(node -p "require('./extension/manifest.json').version")
+          mkdir -p /tmp/firefox
+          unzip -q "dist-extension/floatmini-firefox-${VERSION}.zip" -d /tmp/firefox
+          npx --yes web-ext@10 lint --source-dir /tmp/firefox
+
+      - name: Guardar pacotes
+        uses: actions/upload-artifact@v4
+        with:
+          name: floatmini-pacotes
+          path: dist-extension/*.zip
+          retention-days: 14

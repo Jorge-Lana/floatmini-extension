@@ -1,0 +1,107 @@
+name: Release
+
+# Publica uma nova versão quando você cria uma tag vX.Y.Z (ex.: v1.3.4).
+# A versão da tag precisa ser igual à de extension/manifest.json.
+#
+# Cada loja só é publicada se os segredos dela existirem no repositório
+# (Settings → Secrets and variables → Actions). Sem segredos, o workflow
+# só testa, gera os zips e cria a Release no GitHub. Ver docs/RELEASE.md.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write # criar a Release no GitHub
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+      CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+      AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
+      AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Conferir versão da tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          MANIFEST=$(node -p "require('./extension/manifest.json').version")
+          PKG=$(node -p "require('./package.json').version")
+          echo "tag=$TAG manifest=$MANIFEST package.json=$PKG"
+          if [ "$TAG" != "$MANIFEST" ] || [ "$TAG" != "$PKG" ]; then
+            echo "::error::A tag v$TAG não bate com a versão do manifest ($MANIFEST) ou do package.json ($PKG)."
+            exit 1
+          fi
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      - name: Lint e testes
+        run: |
+          npm run lint
+          npm test
+
+      - name: Gerar pacotes
+        run: npm run zip:ext
+
+      - name: Criar Release no GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v$VERSION" \
+            "dist-extension/floatmini-extension-$VERSION.zip" \
+            "dist-extension/floatmini-firefox-$VERSION.zip" \
+            --title "FloatMini $VERSION" \
+            --generate-notes
+
+      - name: Publicar na Chrome Web Store
+        if: env.CWS_EXTENSION_ID != '' && env.CWS_REFRESH_TOKEN != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+        # Envia e manda para análise; publica sozinho quando aprovar.
+        run: npx --yes chrome-webstore-upload-cli@4 --source "dist-extension/floatmini-extension-$VERSION.zip"
+
+      - name: Publicar no Firefox (addons.mozilla.org)
+        if: env.AMO_API_KEY != '' && env.AMO_API_SECRET != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p /tmp/firefox
+          unzip -q "dist-extension/floatmini-firefox-$VERSION.zip" -d /tmp/firefox
+          # approval-timeout=0: envia para análise e não fica esperando a aprovação.
+          npx --yes web-ext@10 sign \
+            --source-dir /tmp/firefox \
+            --channel listed \
+            --approval-timeout 0 \
+            --api-key "$AMO_API_KEY" \
+            --api-secret "$AMO_API_SECRET"
+
+      - name: Resumo
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          {
+            echo "## FloatMini $VERSION"
+            echo "- Release no GitHub: criada com os dois zips"
+            if [ -n "$CWS_REFRESH_TOKEN" ]; then echo "- Chrome Web Store: enviado para análise"; else echo "- Chrome Web Store: **pulado** (sem segredos CWS_*)"; fi
+            if [ -n "$AMO_API_KEY" ]; then echo "- Firefox: enviado para análise"; else echo "- Firefox: **pulado** (sem segredos AMO_*)"; fi
+          } >> "$GITHUB_STEP_SUMMARY"

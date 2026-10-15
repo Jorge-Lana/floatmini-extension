@@ -18,7 +18,8 @@
     "check:ext": "node scripts/check-extension.mjs",
     "zip:ext": "node scripts/check-extension.mjs && node scripts/zip-extension.mjs",
     "zip:chrome": "node scripts/check-extension.mjs && node scripts/zip-extension.mjs --target=chrome",
-    "zip:firefox": "node scripts/check-extension.mjs && node scripts/zip-extension.mjs --target=firefox"
+    "zip:firefox": "node scripts/check-extension.mjs && node scripts/zip-extension.mjs --target=firefox",
+    "version:set": "node scripts/bump-version.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
