@@ -1,87 +1,75 @@
 name: Release
 
-# Publica uma nova versão quando você cria uma tag vX.Y.Z (ex.: v1.3.4).
-# A versão da tag precisa ser igual à de extension/manifest.json.
+# Publica sozinho quando a versão de extension/manifest.json muda na main.
+# Fluxo: npm run version:set -- 1.3.4 → commit → push na main. Pronto.
 #
-# Cada loja só é publicada se os segredos dela existirem no repositório
-# (Settings → Secrets and variables → Actions). Sem segredos, o workflow
-# só testa, gera os zips e cria a Release no GitHub. Ver docs/RELEASE.md.
+# Se já existe uma Release com essa versão, não faz nada (pushes comuns
+# sem mudar a versão não publicam). Também dá para rodar à mão em
+# Actions → Release → Run workflow.
+#
+# Cada loja só é publicada se os segredos dela existirem
+# (Settings → Secrets and variables → Actions). Ver docs/RELEASE.md.
 on:
   push:
-    tags: ['v*.*.*']
+    branches: [main]
+    paths:
+      - 'extension/manifest.json'
+  workflow_dispatch:
 
 permissions:
-  contents: write # criar a Release no GitHub
+  contents: write # criar a tag e a Release no GitHub
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
     env:
       CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
-      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
-      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
       CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
-      CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
       AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
       AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Versão nova?
+        id: version
+        run: |
+          MANIFEST=$(node -p "require('./extension/manifest.json').version")
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$MANIFEST" != "$PKG" ]; then
+            echo "::error::manifest.json ($MANIFEST) e package.json ($PKG) estão com versões diferentes. Use npm run version:set."
+            exit 1
+          fi
+          echo "version=$MANIFEST" >> "$GITHUB_OUTPUT"
+          if gh release view "v$MANIFEST" >/dev/null 2>&1; then
+            echo "A versão $MANIFEST já foi lançada. Nada a fazer."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.version.outputs.publish == 'true'
         with:
           node-version: 22
 
       - uses: oven-sh/setup-bun@v2
+        if: steps.version.outputs.publish == 'true'
 
-      - name: Conferir versão da tag
-        id: version
+      - name: Instalar, testar e gerar pacotes
+        if: steps.version.outputs.publish == 'true'
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          MANIFEST=$(node -p "require('./extension/manifest.json').version")
-          PKG=$(node -p "require('./package.json').version")
-          echo "tag=$TAG manifest=$MANIFEST package.json=$PKG"
-          if [ "$TAG" != "$MANIFEST" ] || [ "$TAG" != "$PKG" ]; then
-            echo "::error::A tag v$TAG não bate com a versão do manifest ($MANIFEST) ou do package.json ($PKG)."
-            exit 1
-          fi
-          echo "version=$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Instalar dependências
-        run: bun install --frozen-lockfile
-
-      - name: Lint e testes
-        run: |
+          bun install --frozen-lockfile
           npm run lint
           npm test
-
-      - name: Gerar pacotes
-        run: npm run zip:ext
-
-      - name: Criar Release no GitHub
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          gh release create "v$VERSION" \
-            "dist-extension/floatmini-extension-$VERSION.zip" \
-            "dist-extension/floatmini-firefox-$VERSION.zip" \
-            --title "FloatMini $VERSION" \
-            --generate-notes
-
-      - name: Publicar na Chrome Web Store
-        if: env.CWS_EXTENSION_ID != '' && env.CWS_REFRESH_TOKEN != ''
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
-          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
-          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
-          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
-        # Envia e manda para análise; publica sozinho quando aprovar.
-        run: npx --yes chrome-webstore-upload-cli@4 --source "dist-extension/floatmini-extension-$VERSION.zip"
+          npm run zip:ext
 
       - name: Publicar no Firefox (addons.mozilla.org)
-        if: env.AMO_API_KEY != '' && env.AMO_API_SECRET != ''
+        if: steps.version.outputs.publish == 'true' && env.AMO_API_KEY != '' && env.AMO_API_SECRET != ''
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -95,13 +83,41 @@ jobs:
             --api-key "$AMO_API_KEY" \
             --api-secret "$AMO_API_SECRET"
 
-      - name: Resumo
+      - name: Publicar na Chrome Web Store
+        if: steps.version.outputs.publish == 'true' && env.CWS_EXTENSION_ID != '' && env.CWS_REFRESH_TOKEN != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+        run: npx --yes chrome-webstore-upload-cli@4 --source "dist-extension/floatmini-extension-$VERSION.zip"
+
+      # Por último: a Release (e a tag) só existe se os envios deram certo,
+      # então um push que falhou pode ser repetido.
+      - name: Criar tag e Release no GitHub
+        if: steps.version.outputs.publish == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          gh release create "v$VERSION" \
+            "dist-extension/floatmini-extension-$VERSION.zip" \
+            "dist-extension/floatmini-firefox-$VERSION.zip" \
+            --target "$GITHUB_SHA" \
+            --title "FloatMini $VERSION" \
+            --generate-notes
+
+      - name: Resumo
+        if: always()
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          PUBLISH: ${{ steps.version.outputs.publish }}
+        run: |
           {
             echo "## FloatMini $VERSION"
-            echo "- Release no GitHub: criada com os dois zips"
-            if [ -n "$CWS_REFRESH_TOKEN" ]; then echo "- Chrome Web Store: enviado para análise"; else echo "- Chrome Web Store: **pulado** (sem segredos CWS_*)"; fi
+            if [ "$PUBLISH" != "true" ]; then echo "- Versão já lançada antes: nada publicado."; exit 0; fi
             if [ -n "$AMO_API_KEY" ]; then echo "- Firefox: enviado para análise"; else echo "- Firefox: **pulado** (sem segredos AMO_*)"; fi
+            if [ -n "$CWS_REFRESH_TOKEN" ]; then echo "- Chrome Web Store: enviado para análise"; else echo "- Chrome Web Store: **pulado** (sem segredos CWS_*)"; fi
+            echo "- Release no GitHub: v$VERSION"
           } >> "$GITHUB_STEP_SUMMARY"
