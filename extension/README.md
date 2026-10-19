@@ -32,7 +32,7 @@ Requer Chrome, Edge, Brave ou Opera 116+, ou **Firefox 151+** (desktop).
 
 | Site | Conteúdo |
 |------|----------|
-| YouTube e outros sites com vídeo | O próprio vídeo, com ⏪ 10s, Play/Pausar, 10s ⏩, velocidade (1x a 2x) e volume (mudo + controle deslizante). Teclas: espaço, ← →, ↑ ↓ (volume) e M (mudo). |
+| YouTube e outros sites com vídeo | Só o vídeo, ocupando a janela inteira. Os controles aparecem numa barrinha ao mexer o mouse e somem sozinhos depois de 2 segundos: ⏪ 10s, Play/Pausar, 10s ⏩, velocidade (1x a 2x) e volume (mudo + controle deslizante). Teclas: espaço, ← →, ↑ ↓ (volume) e M (mudo). |
 | YouTube Music | Mini player ("tela menor") com capa, faixa, artista, barra de progresso, volume, aleatório, anterior, play, próxima e repetir. Teclas: ↑ ↓ (volume) e M (mudo). |
 | Spotify Web | Mesmo mini player, controlando os botões do próprio Spotify. |
 

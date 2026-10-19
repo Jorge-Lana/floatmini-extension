@@ -343,17 +343,17 @@
       width: 100% !important; height: 100% !important; object-fit: contain;
       position: static !important; left: auto !important; top: auto !important; transform: none !important;
     }
-    .fm-overlay-top, .fm-overlay-bottom {
-      position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 4px;
-      padding: 6px 8px; opacity: 0; transition: opacity 0.2s ease;
-    }
-    .fm-overlay-top { top: 0; background: linear-gradient(rgba(0,0,0,0.75), transparent); }
+    /* Só o vídeo; os controles aparecem numa barrinha quando o mouse mexe. */
     .fm-overlay-bottom {
-      bottom: 0; justify-content: center; flex-wrap: wrap;
-      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+      display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px;
+      max-width: calc(100% - 16px); padding: 5px 6px; border-radius: 10px;
+      background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
     }
-    body:hover .fm-overlay-top, body:hover .fm-overlay-bottom, body:focus-within .fm-overlay-bottom { opacity: 1; }
-    .fm-title { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    body.fm-active .fm-overlay-bottom { opacity: 1; pointer-events: auto; }
+    body.fm-video:not(.fm-active) { cursor: none; }
 
     /* Música (YouTube Music / Spotify) */
     body.fm-music { display: flex; flex-direction: column; padding: 10px; gap: 8px; }
@@ -430,10 +430,6 @@
     const stage = el(doc, 'div', 'fm-stage');
     stage.append(video);
 
-    const top = el(doc, 'div', 'fm-overlay-top');
-    const title = el(doc, 'span', 'fm-title');
-    top.append(title);
-
     const bottom = el(doc, 'div', 'fm-overlay-bottom');
     const playBtn = makeButton(doc, '', 'Play/Pausar (espaço)', () => (video.paused ? video.play() : video.pause()));
     playBtn.classList.add('fm-primary');
@@ -450,10 +446,29 @@
       volume.node
     );
 
-    doc.body.append(stage, top, bottom);
+    doc.body.append(stage, bottom);
+
+    // Controles visíveis enquanto o mouse mexe (ou com o vídeo pausado).
+    let idleTimer = null;
+    const IDLE_MS = 2000;
+    const showControls = () => {
+      doc.body.classList.add('fm-active');
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        if (!video.paused && !bottom.matches(':hover') && !bottom.contains(doc.activeElement)) {
+          doc.body.classList.remove('fm-active');
+        }
+      }, IDLE_MS);
+    };
+    ['mousemove', 'pointerdown', 'keydown'].forEach((type) => doc.addEventListener(type, showControls));
+    doc.addEventListener('mouseleave', () => {
+      if (!video.paused) doc.body.classList.remove('fm-active');
+    });
+    showControls();
 
     const refresh = () => {
-      title.textContent = cleanTitle(document.title);
+      doc.title = cleanTitle(document.title);
+      if (video.paused) doc.body.classList.add('fm-active');
       playBtn.textContent = video.paused ? '▶ Play' : '⏸ Pausar';
       speedBtn.textContent = `${video.playbackRate}x`;
       volume.refresh();
@@ -486,6 +501,7 @@
 
     pipWindow.addEventListener('pagehide', () => {
       clearInterval(timer);
+      clearTimeout(idleTimer);
       mediaEvents.forEach((type) => video.removeEventListener(type, refresh));
       const playing = !video.paused;
       if (placeholder.isConnected) {

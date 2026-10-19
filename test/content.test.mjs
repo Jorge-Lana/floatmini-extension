@@ -149,7 +149,7 @@ test('título da página entra como texto, não como HTML', async () => {
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
   const pipDoc = docPip.window.document;
   assert.equal(pipDoc.querySelector('img'), null);
-  assert.equal(pipDoc.querySelector('.fm-title').textContent, '<img src=x onerror="alert(1)">');
+  assert.equal(pipDoc.title, '<img src=x onerror="alert(1)">');
   page.close();
 });
 
@@ -512,4 +512,24 @@ test('YouTube Music: mini player tem volume ligado ao áudio da página', async 
   slider.value = '0';
   slider.dispatchEvent(new docPip.window.Event('input'));
   assert.equal(media.muted, true);
+});
+
+test('janela de vídeo limpa: sem título por cima e controles que somem sozinhos', async () => {
+  const page = loadPage({ url: 'https://www.youtube.com/watch?v=a', html: YT_HTML, active: true });
+  const media = fakeMedia(page.document.querySelector('video'));
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  assert.equal(pipDoc.querySelector('.fm-overlay-top, .fm-title'), null, 'nada por cima do vídeo');
+  assert.ok(pipDoc.body.classList.contains('fm-active'), 'controles aparecem ao abrir');
+
+  await new Promise((r) => setTimeout(r, 2200));
+  assert.ok(!pipDoc.body.classList.contains('fm-active'), 'somem depois de 2s parado');
+
+  pipDoc.dispatchEvent(new docPip.window.MouseEvent('mousemove'));
+  assert.ok(pipDoc.body.classList.contains('fm-active'), 'voltam ao mexer o mouse');
+
+  media.paused = true;
+  await new Promise((r) => setTimeout(r, 2200));
+  assert.ok(pipDoc.body.classList.contains('fm-active'), 'ficam visíveis com o vídeo pausado');
 });
