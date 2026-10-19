@@ -346,13 +346,26 @@
     /* Só o vídeo; os controles aparecem numa barrinha quando o mouse mexe. */
     .fm-overlay-bottom {
       position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
-      display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px;
+      display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 4px;
       max-width: calc(100% - 16px); padding: 5px 6px; border-radius: 10px;
       background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
       opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
     }
     body.fm-active .fm-overlay-bottom { opacity: 1; pointer-events: auto; }
+    .fm-overlay-bottom .fm-btn { flex-shrink: 0; }
+    .fm-overlay-bottom .fm-volume input[type='range'] { width: 64px; }
+    .fm-lbl { margin-left: 3px; }
+    /* Janela estreita: só ícones e volume menor, tudo numa linha. */
+    @media (max-width: 520px) {
+      .fm-lbl { display: none; }
+      .fm-overlay-bottom { gap: 3px; padding: 4px 5px; }
+      .fm-overlay-bottom .fm-btn { padding: 4px 7px; }
+      .fm-overlay-bottom .fm-volume input[type='range'] { width: 48px; }
+    }
+    @media (max-width: 300px) {
+      .fm-overlay-bottom .fm-volume input[type='range'] { display: none; }
+    }
     body.fm-video:not(.fm-active) { cursor: none; }
 
     /* Música (YouTube Music / Spotify) */
@@ -438,10 +451,17 @@
       video.playbackRate = SPEEDS[(index + 1) % SPEEDS.length];
     });
     const volume = buildVolumeControl(doc, () => volumeTarget(video));
+    const back = makeButton(doc, '⏪', 'Voltar 10 segundos (←)', () => seekBy(video, -10));
+    back.append(el(doc, 'span', 'fm-lbl', '10s'));
+    const fwd = makeButton(doc, '', 'Avançar 10 segundos (→)', () => seekBy(video, 10));
+    fwd.append(el(doc, 'span', 'fm-lbl', '10s'), doc.createTextNode(' ⏩'));
+    const playIcon = el(doc, 'span', 'fm-ico');
+    const playLabel = el(doc, 'span', 'fm-lbl');
+    playBtn.append(playIcon, playLabel);
     bottom.append(
-      makeButton(doc, '⏪ 10s', 'Voltar 10 segundos (←)', () => seekBy(video, -10)),
+      back,
       playBtn,
-      makeButton(doc, '10s ⏩', 'Avançar 10 segundos (→)', () => seekBy(video, 10)),
+      fwd,
       speedBtn,
       volume.node
     );
@@ -469,7 +489,8 @@
     const refresh = () => {
       doc.title = cleanTitle(document.title);
       if (video.paused) doc.body.classList.add('fm-active');
-      playBtn.textContent = video.paused ? '▶ Play' : '⏸ Pausar';
+      playIcon.textContent = video.paused ? '▶' : '⏸';
+      playLabel.textContent = video.paused ? 'Play' : 'Pausar';
       speedBtn.textContent = `${video.playbackRate}x`;
       volume.refresh();
     };

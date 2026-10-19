@@ -119,7 +119,8 @@ test('Alt+P na página abre a janela flutuante com o vídeo e devolve ao fechar'
   const pipDoc = docPip.window.document;
   assert.equal(video.ownerDocument, pipDoc, 'o vídeo foi movido para a janela flutuante');
   const labels = [...pipDoc.querySelectorAll('button')].map((b) => b.textContent);
-  assert.ok(labels.includes('⏪ 10s') && labels.includes('10s ⏩'));
+  assert.ok(labels.includes('⏪10s') && labels.includes('10s ⏩'));
+  assert.ok(pipDoc.querySelectorAll('.fm-overlay-bottom .fm-lbl').length >= 3, 'rótulos que somem em janela estreita');
 
   // Alt+P de novo fecha e o vídeo volta exatamente para o mesmo lugar.
   page.document.dispatchEvent(new page.window.KeyboardEvent('keydown', { code: 'KeyP', altKey: true, bubbles: true }));
