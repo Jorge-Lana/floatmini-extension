@@ -5,7 +5,7 @@ O repositório tem dois workflows do GitHub Actions (em `.github/workflows/`):
 | Workflow | Quando roda | O que faz |
 |----------|-------------|-----------|
 | `ci.yml` | Todo PR e todo push na `main` | Lint, testes, build do site, gera os dois zips e valida o do Firefox com `web-ext lint`. Os zips ficam em *Actions → (execução) → Artifacts*. |
-| `release.yml` | Quando você cria uma tag `vX.Y.Z` | Confere a versão, roda lint e testes, gera os zips, cria a **Release no GitHub** e envia para a **Chrome Web Store** e o **Firefox Add-ons**. |
+| `release.yml` | Quando a versão do `extension/manifest.json` muda na `main` (ou à mão em *Actions → Release → Run workflow*) | Roda lint e testes, gera os zips, envia para o **Firefox Add-ons** e a **Chrome Web Store** e cria a tag e a **Release no GitHub**. Se a versão já foi lançada, não faz nada. |
 
 Cada loja só recebe o envio se os segredos dela estiverem configurados. Sem eles, o workflow pula a loja e avisa no resumo da execução.
 
@@ -16,12 +16,10 @@ Cada loja só recebe o envio se os segredos dela estiverem configurados. Sem ele
 ```bash
 npm run version:set -- 1.3.4     # atualiza manifest.json e package.json
 git commit -am "chore: versão 1.3.4"
-git push
-git tag v1.3.4
-git push origin v1.3.4           # dispara o release.yml
+git push                         # na main: dispara o release.yml
 ```
 
-A tag precisa ter a mesma versão do `manifest.json`, senão o workflow para com erro.
+Pushes que não mudam a versão não publicam nada. Se um envio falhar, a Release não é criada, e dá para repetir em *Actions → Release → Run workflow*.
 
 As duas lojas ainda fazem a análise delas. A extensão atualiza para os usuários depois da aprovação.
 
