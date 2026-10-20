@@ -485,10 +485,14 @@ test('janela de vídeo: volume pelo controle deslizante, mudo e setas', async ()
   const slider = pipDoc.querySelector('.fm-volume input[type="range"]');
   const muteBtn = pipDoc.querySelector('.fm-volume .fm-btn');
   assert.equal(slider.value, '80');
+  const asked = [];
+  page.document.addEventListener('floatmini:volume', (e) => asked.push(JSON.parse(e.detail)));
 
   slider.value = '30';
   slider.dispatchEvent(new docPip.window.Event('input'));
   assert.ok(Math.abs(media.volume - 0.3) < 1e-9);
+  // Pede ao player do YouTube para guardar o volume (senão ele volta sozinho).
+  assert.ok(asked.length > 0 && Math.abs(asked.at(-1).volume - 0.3) < 1e-9 && !asked.at(-1).muted);
   assert.equal(muteBtn.dataset.icon, 'volumeDown');
 
   muteBtn.click();
@@ -533,4 +537,21 @@ test('janela de vídeo limpa: sem título por cima e controles que somem sozinho
   media.paused = true;
   await new Promise((r) => setTimeout(r, 2200));
   assert.ok(pipDoc.body.classList.contains('fm-active'), 'ficam visíveis com o vídeo pausado');
+});
+
+test('ponte de volume usa a API do player do YouTube', async () => {
+  const { JSDOM } = await import('jsdom');
+  const { readFileSync } = await import('node:fs');
+  const dom = new JSDOM('<div id="movie_player"></div>', { runScripts: 'outside-only' });
+  const calls = [];
+  const player = dom.window.document.getElementById('movie_player');
+  player.setVolume = (v) => calls.push(['setVolume', v]);
+  player.mute = () => calls.push(['mute']);
+  player.unMute = () => calls.push(['unMute']);
+  dom.window.eval(readFileSync(new URL('../extension/yt-volume.js', import.meta.url), 'utf8'));
+  const send = (d) =>
+    dom.window.document.dispatchEvent(new dom.window.CustomEvent('floatmini:volume', { detail: JSON.stringify(d) }));
+  send({ volume: 0.25, muted: false });
+  send({ volume: 0.25, muted: true });
+  assert.deepEqual(calls, [['setVolume', 25], ['unMute'], ['mute']]);
 });
