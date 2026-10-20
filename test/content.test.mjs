@@ -539,19 +539,33 @@ test('janela de vídeo limpa: sem título por cima e controles que somem sozinho
   assert.ok(pipDoc.body.classList.contains('fm-active'), 'ficam visíveis com o vídeo pausado');
 });
 
-test('ponte de volume usa a API do player do YouTube', async () => {
+test('ponte de volume: usa a API do player e desfaz mudanças do site', async () => {
   const { JSDOM } = await import('jsdom');
   const { readFileSync } = await import('node:fs');
-  const dom = new JSDOM('<div id="movie_player"></div>', { runScripts: 'outside-only' });
-  const calls = [];
-  const player = dom.window.document.getElementById('movie_player');
-  player.setVolume = (v) => calls.push(['setVolume', v]);
-  player.mute = () => calls.push(['mute']);
-  player.unMute = () => calls.push(['unMute']);
+  const dom = new JSDOM('<div id="movie_player"></div><div id="volume-slider"></div>', { runScripts: 'outside-only' });
+  const doc = dom.window.document;
+  const player = doc.getElementById('movie_player');
+  const state = { volume: 100, muted: false };
+  player.setVolume = (v) => (state.volume = v);
+  player.getVolume = () => state.volume;
+  player.mute = () => (state.muted = true);
+  player.unMute = () => (state.muted = false);
+  player.isMuted = () => state.muted;
+  const slider = doc.getElementById('volume-slider');
+  slider.value = 100;
   dom.window.eval(readFileSync(new URL('../extension/yt-volume.js', import.meta.url), 'utf8'));
-  const send = (d) =>
-    dom.window.document.dispatchEvent(new dom.window.CustomEvent('floatmini:volume', { detail: JSON.stringify(d) }));
+  const send = (d) => doc.dispatchEvent(new dom.window.CustomEvent('floatmini:volume', { detail: JSON.stringify(d) }));
+
   send({ volume: 0.25, muted: false });
+  assert.equal(state.volume, 25);
+  assert.equal(slider.value, 25);
+
+  // O site reaplica o volume dele sozinho → volta para 25.
+  state.volume = 100;
+  doc.dispatchEvent(new dom.window.Event('volumechange'));
+  assert.equal(state.volume, 25);
+
   send({ volume: 0.25, muted: true });
-  assert.deepEqual(calls, [['setVolume', 25], ['unMute'], ['mute']]);
+  assert.equal(state.muted, true);
+  dom.window.close();
 });
