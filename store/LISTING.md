@@ -100,7 +100,7 @@ Enjoying it? Support the project: buymeacoffee.com/jorgelana
 | Store icon | `extension/icons/icon128.png` | 128×128 |
 | Small promo tile | `store/promo-small-440x280.png` | 440×280 |
 | Marquee promo tile (opcional) | `store/promo-marquee-1400x560.png` | 1400×560 |
-| Screenshots (1 a 5) | tirar no navegador, ver abaixo | 1280×800 |
+| Screenshots (1 a 5) | `store/screenshots/floatmini-*.png` | 1280×800 |
 
 **Screenshots sugeridos** (janela do Chrome em 1280×800, ou recorte para esse tamanho):
 1. Vídeo do YouTube flutuando por cima de outro programa (editor de código ou planilha).
