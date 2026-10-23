@@ -587,3 +587,80 @@ test('YouTube Music: clicar na barra de progresso muda o tempo da música', asyn
   seek.dispatchEvent(new docPip.window.MouseEvent('pointermove', { clientX: 300, bubbles: true }));
   assert.equal(media.currentTime, 150, 'sem arrastar, mover o mouse não muda o tempo');
 });
+
+test('janela de vídeo: linha do tempo mostra o tempo e muda a posição', async () => {
+  const page = loadPage({ url: 'https://www.youtube.com/watch?v=a', html: YT_HTML, active: true });
+  const media = fakeMedia(page.document.querySelector('video'), { duration: 600, currentTime: 65 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  const timeline = pipDoc.querySelector('.fm-timeline');
+  assert.ok(timeline && !timeline.hidden);
+  const [now, total] = timeline.querySelectorAll('.fm-time');
+  assert.equal(now.textContent, '1:05');
+  assert.equal(total.textContent, '10:00');
+
+  const scrub = timeline.querySelector('input[type="range"]');
+  scrub.value = '500';
+  scrub.dispatchEvent(new docPip.window.Event('input'));
+  assert.equal(media.currentTime, 300);
+  scrub.dispatchEvent(new docPip.window.Event('change'));
+  assert.equal(now.textContent, '5:00');
+
+  // Ao vivo (sem duração): some.
+  media.duration = Infinity;
+  pipDoc.querySelector('video').dispatchEvent(new docPip.window.Event('durationchange'));
+  assert.equal(timeline.hidden, true);
+});
+
+test('Netflix: avançar usa a API do player em vez de mexer no <video>', async () => {
+  const page = loadPage({ url: 'https://www.netflix.com/watch/1', html: '<div class="watch-video"><video></video></div>', active: true });
+  const media = fakeMedia(page.document.querySelector('video'), { duration: 3000, currentTime: 100 });
+  const docPip = fakeDocumentPip(page.window);
+  const asked = [];
+  page.document.addEventListener('floatmini:seek', (e) => asked.push(JSON.parse(e.detail).time));
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const fwd = [...docPip.window.document.querySelectorAll('.fm-btn')].find((b) => b.title.startsWith('Avançar'));
+  fwd.click();
+  assert.deepEqual(asked, [110]);
+  assert.equal(media.currentTime, 100, 'o <video> da Netflix não é alterado direto');
+});
+
+test('legendas do site aparecem na janela flutuante', async () => {
+  const html = '<div class="watch-video"><video></video><div class="player-timedtext"><div class="player-timedtext-text-container"></div></div></div>';
+  const page = loadPage({ url: 'https://www.netflix.com/watch/1', html, active: true });
+  fakeMedia(page.document.querySelector('video'), { duration: 3000 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const captions = docPip.window.document.querySelector('.fm-captions');
+  assert.equal(captions.textContent, '');
+  page.document.querySelector('.player-timedtext-text-container').textContent = 'Olá, mundo';
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(captions.textContent, 'Olá, mundo');
+  page.document.querySelector('.player-timedtext-text-container').textContent = '';
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(captions.textContent, '');
+});
+
+test('ponte da página: seek na Netflix vira milissegundos na API do player', async () => {
+  const { JSDOM } = await import('jsdom');
+  const { readFileSync } = await import('node:fs');
+  const dom = new JSDOM('', { runScripts: 'outside-only' });
+  const seeks = [];
+  const player = { seek: (ms) => seeks.push(ms) };
+  dom.window.netflix = {
+    appContext: {
+      state: {
+        playerApp: {
+          getAPI: () => ({
+            videoPlayer: { getAllPlayerSessionIds: () => ['s1'], getVideoPlayerBySessionId: () => player }
+          })
+        }
+      }
+    }
+  };
+  dom.window.eval(readFileSync(new URL('../extension/page-bridge.js', import.meta.url), 'utf8'));
+  dom.window.document.dispatchEvent(new dom.window.CustomEvent('floatmini:seek', { detail: JSON.stringify({ time: 12.5 }) }));
+  assert.deepEqual(seeks, [12500]);
+  dom.window.close();
+});

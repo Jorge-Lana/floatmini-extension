@@ -12,6 +12,7 @@
     host === 'music.youtube.com' ? 'youtube-music'
     : host === 'youtube.com' || host.endsWith('.youtube.com') ? 'youtube'
     : host === 'open.spotify.com' ? 'spotify'
+    : host === 'netflix.com' || host.endsWith('.netflix.com') ? 'netflix'
     : 'other';
   const IS_MUSIC_SITE = SITE === 'youtube-music' || SITE === 'spotify';
 
@@ -198,9 +199,52 @@
     return el.getClientRects().length > 0 && style.visibility !== 'hidden' && style.display !== 'none';
   }
 
-  function seekBy(video, seconds) {
+  function seekTo(video, time) {
     const max = Number.isFinite(video.duration) ? video.duration : Infinity;
-    video.currentTime = Math.min(max, Math.max(0, video.currentTime + seconds));
+    const target = Math.min(max, Math.max(0, time));
+    if (SITE === 'netflix') {
+      // A Netflix trava se o <video> for alterado direto: usa a API do player.
+      const detail = JSON.stringify({ time: target });
+      document.dispatchEvent(new CustomEvent('floatmini:seek', { detail }));
+      return;
+    }
+    video.currentTime = target;
+  }
+
+  function seekBy(video, seconds) {
+    seekTo(video, video.currentTime + seconds);
+  }
+
+  function formatClock(seconds) {
+    if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+    const s = Math.floor(seconds);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = String(s % 60).padStart(2, '0');
+    return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
+  }
+
+  // Legendas que o site desenha na página (não no <video>). Ao levar o vídeo
+  // para a janela flutuante, o texto é copiado para lá.
+  const CAPTION_SELECTORS = [
+    '.ytp-caption-window-container .caption-visual-line', // YouTube
+    '.player-timedtext-text-container', // Netflix
+    '.atvwebplayersdk-captions-text', // Prime Video
+    '.hive-subtitle-renderer-line', // Disney+
+    '.dss-subtitle-renderer-line',
+    '.dss-subtitle-renderer-cue'
+  ];
+
+  function readSiteCaptions() {
+    for (const sel of CAPTION_SELECTORS) {
+      const lines = [];
+      for (const node of document.querySelectorAll(sel)) {
+        const text = (node.innerText ?? node.textContent ?? '').trim();
+        if (text && !lines.includes(text)) lines.push(text);
+      }
+      if (lines.length) return lines.join('\n');
+    }
+    return '';
   }
 
   function cleanTitle(title) {
@@ -369,6 +413,35 @@
     }
     body.fm-active .fm-overlay-bottom { opacity: 1; pointer-events: auto; }
     .fm-overlay-bottom .fm-btn { flex-shrink: 0; }
+    /* Linha do tempo: clique ou arraste para ir a qualquer ponto. */
+    .fm-timeline {
+      position: absolute; left: 10px; right: 10px; bottom: 52px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; font-variant-numeric: tabular-nums; color: #e2e8f0;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+    }
+    body.fm-active .fm-timeline { opacity: 1; pointer-events: auto; }
+    .fm-timeline[hidden] { display: none; }
+    .fm-timeline input[type='range'] {
+      flex: 1; min-width: 0; height: 4px; cursor: pointer;
+      -webkit-appearance: none; appearance: none; border-radius: 4px;
+      background: linear-gradient(to right, #3b82f6 var(--fm-pct, 0%), rgba(255, 255, 255, 0.3) var(--fm-pct, 0%));
+    }
+    .fm-timeline input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 0;
+    }
+    .fm-timeline input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 0; }
+    /* Legendas copiadas do site. */
+    .fm-captions {
+      position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%);
+      max-width: 92%; padding: 2px 8px; border-radius: 4px; text-align: center;
+      white-space: pre-line; line-height: 1.3; pointer-events: none;
+      font-size: clamp(12px, 4.4vw, 30px); color: #fff; background: rgba(0, 0, 0, 0.6);
+      transition: bottom 0.25s ease;
+    }
+    .fm-captions:empty { display: none; }
+    body.fm-active .fm-captions { bottom: 84px; }
     .fm-overlay-bottom .fm-volume input[type='range'] { width: 64px; }
     .fm-lbl { margin-left: 3px; }
     /* Janela estreita: só ícones e volume menor, tudo numa linha. */
@@ -483,7 +556,50 @@
       volume.node
     );
 
-    doc.body.append(stage, bottom);
+    // Linha do tempo (some em transmissões ao vivo, sem duração).
+    const timeline = el(doc, 'div', 'fm-timeline');
+    const timeNow = el(doc, 'span', 'fm-time', '0:00');
+    const timeTotal = el(doc, 'span', 'fm-time', '0:00');
+    const scrub = el(doc, 'input');
+    scrub.type = 'range';
+    scrub.min = '0';
+    scrub.max = '1000';
+    scrub.step = '1';
+    scrub.value = '0';
+    scrub.title = 'Clique ou arraste para mudar o tempo';
+    scrub.setAttribute('aria-label', 'Tempo do vídeo');
+    timeline.append(timeNow, scrub, timeTotal);
+    let scrubbing = false;
+    const renderTime = (current) => {
+      const total = video.duration;
+      const live = !Number.isFinite(total) || total <= 0;
+      timeline.hidden = live;
+      if (live) return;
+      const pct = Math.min(100, Math.max(0, (current / total) * 100));
+      timeNow.textContent = formatClock(current);
+      timeTotal.textContent = formatClock(total);
+      scrub.style.setProperty('--fm-pct', `${pct}%`);
+      if (!scrubbing) scrub.value = String(Math.round(pct * 10));
+    };
+    scrub.addEventListener('input', () => {
+      scrubbing = true;
+      const target = (Number(scrub.value) / 1000) * video.duration;
+      renderTime(target);
+      seekTo(video, target);
+    });
+    scrub.addEventListener('change', () => {
+      scrubbing = false;
+      renderTime(video.currentTime);
+    });
+    const onTime = () => renderTime(video.currentTime);
+
+    const captions = el(doc, 'div', 'fm-captions');
+    const captionTimer = setInterval(() => {
+      const text = readSiteCaptions();
+      if (captions.textContent !== text) captions.textContent = text;
+    }, 200);
+
+    doc.body.append(stage, captions, timeline, bottom);
 
     // Controles visíveis enquanto o mouse mexe (ou com o vídeo pausado).
     let idleTimer = null;
@@ -492,7 +608,8 @@
       doc.body.classList.add('fm-active');
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
-        if (!video.paused && !bottom.matches(':hover') && !bottom.contains(doc.activeElement)) {
+        const busy = bottom.matches(':hover') || timeline.matches(':hover') || scrubbing;
+        if (!video.paused && !busy && !bottom.contains(doc.activeElement)) {
           doc.body.classList.remove('fm-active');
         }
       }, IDLE_MS);
@@ -510,10 +627,12 @@
       playLabel.textContent = video.paused ? 'Play' : 'Pausar';
       speedBtn.textContent = `${video.playbackRate}x`;
       volume.refresh();
+      onTime();
     };
     refresh();
-    const mediaEvents = ['play', 'pause', 'ratechange', 'volumechange'];
+    const mediaEvents = ['play', 'pause', 'ratechange', 'volumechange', 'durationchange'];
     mediaEvents.forEach((type) => video.addEventListener(type, refresh));
+    video.addEventListener('timeupdate', onTime);
     const timer = setInterval(refresh, 1000);
 
     doc.addEventListener('keydown', (e) => {
@@ -539,8 +658,10 @@
 
     pipWindow.addEventListener('pagehide', () => {
       clearInterval(timer);
+      clearInterval(captionTimer);
       clearTimeout(idleTimer);
       mediaEvents.forEach((type) => video.removeEventListener(type, refresh));
+      video.removeEventListener('timeupdate', onTime);
       const playing = !video.paused;
       if (placeholder.isConnected) {
         placeholder.replaceWith(video);
