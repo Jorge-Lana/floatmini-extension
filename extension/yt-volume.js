@@ -10,11 +10,14 @@
   if (window.__floatminiVolume) return;
   window.__floatminiVolume = true;
 
+  // Controles de volume do site. O layout do YouTube Music muda com frequência,
+  // então além dos seletores conhecidos vale qualquer elemento com "volume" no
+  // id, classe ou rótulo, e qualquer controle deslizante.
   const SITE_VOLUME =
-    '.ytp-volume-area, .ytp-volume-panel, .ytp-mute-button, #volume-slider, #expand-volume-slider, #expand-volume, ytmusic-player-expanding-menu';
-  const USER_WINDOW_MS = 1500;
+    '.ytp-volume-area, .ytp-volume-panel, .ytp-mute-button, #volume-slider, #expand-volume-slider, #expand-volume, ytmusic-player-expanding-menu, tp-yt-paper-slider, input[type="range"], [role="slider"]';
+  const VOLUME_WORD = /volume|mute|mudo|som\b/i;
   let desired = null; // { percent, muted }
-  let lastSiteInput = 0;
+  let applying = false; // eventos disparados pela própria extensão
 
   const player = () => {
     const p = document.getElementById('movie_player');
@@ -31,6 +34,15 @@
 
   function apply() {
     if (!desired) return;
+    applying = true;
+    try {
+      applyNow();
+    } finally {
+      applying = false;
+    }
+  }
+
+  function applyNow() {
     const p = player();
     if (p) {
       if (!desired.muted && p.getVolume?.() !== desired.percent) p.setVolume(desired.percent);
@@ -50,11 +62,6 @@
 
   function siteChanged() {
     if (!desired) return;
-    // Mudança feita pela pessoa no próprio site: aceita e para de corrigir.
-    if (Date.now() - lastSiteInput < USER_WINDOW_MS) {
-      desired = null;
-      return;
-    }
     const p = player();
     if (!p) return;
     const percent = p.getVolume?.();
@@ -64,13 +71,20 @@
     }
   }
 
-  // Interação da pessoa com o volume do site (inclui Shadow DOM).
-  const markSiteInput = (event) => {
-    const hit = event.composedPath().some((n) => n instanceof Element && n.matches(SITE_VOLUME));
-    if (hit) lastSiteInput = Date.now();
+  // A pessoa mexeu no volume do próprio site: o site passa a valer e a
+  // extensão para de corrigir (até ela mudar o volume na janela flutuante).
+  const isVolumeControl = (n) => {
+    if (!(n instanceof Element)) return false;
+    if (n.matches(SITE_VOLUME)) return true;
+    const label = `${n.id} ${typeof n.className === 'string' ? n.className : ''} ${n.getAttribute('aria-label') || ''} ${n.getAttribute('title') || ''}`;
+    return VOLUME_WORD.test(label);
+  };
+  const releaseOnSiteInput = (event) => {
+    if (applying || !desired) return;
+    if (event.composedPath().some(isVolumeControl)) desired = null;
   };
   for (const type of ['pointerdown', 'wheel', 'input', 'change']) {
-    document.addEventListener(type, (e) => e.isTrusted && markSiteInput(e), true);
+    document.addEventListener(type, releaseOnSiteInput, true);
   }
   document.addEventListener(
     'keydown',
@@ -78,7 +92,7 @@
       if (!e.isTrusted) return;
       const t = e.target;
       if (t instanceof Element && t.closest('input, textarea, [contenteditable="true"]')) return;
-      if (['ArrowUp', 'ArrowDown'].includes(e.key) || e.key === 'm' || e.key === 'M') lastSiteInput = Date.now();
+      if (['ArrowUp', 'ArrowDown'].includes(e.key) || e.key === 'm' || e.key === 'M') desired = null;
     },
     true
   );
