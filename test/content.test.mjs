@@ -569,3 +569,21 @@ test('ponte de volume: usa a API do player e desfaz mudanças do site', async ()
   assert.equal(state.muted, true);
   dom.window.close();
 });
+
+test('YouTube Music: clicar na barra de progresso muda o tempo da música', async () => {
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html: YTM_MINIPLAYER + '<video></video>', active: true });
+  const media = fakeMedia(page.document.querySelector('video'), { duration: 200, currentTime: 10 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  const seek = pipDoc.querySelector('.fm-seek');
+  assert.ok(seek, 'barra de progresso clicável');
+  pipDoc.querySelector('.fm-progress').getBoundingClientRect = () => ({ left: 100, width: 200, top: 0, height: 3 });
+  seek.dispatchEvent(new docPip.window.MouseEvent('pointerdown', { clientX: 150, bubbles: true }));
+  assert.equal(media.currentTime, 50); // 25% de 200 s
+  seek.dispatchEvent(new docPip.window.MouseEvent('pointermove', { clientX: 250, bubbles: true }));
+  assert.equal(media.currentTime, 150);
+  seek.dispatchEvent(new docPip.window.MouseEvent('pointerup', { bubbles: true }));
+  seek.dispatchEvent(new docPip.window.MouseEvent('pointermove', { clientX: 300, bubbles: true }));
+  assert.equal(media.currentTime, 150, 'sem arrastar, mover o mouse não muda o tempo');
+});
