@@ -567,6 +567,24 @@ test('ponte de volume: usa a API do player e desfaz mudanças do site', async ()
 
   send({ volume: 0.25, muted: true });
   assert.equal(state.muted, true);
+
+  // A pessoa mexe no volume do próprio site (layout novo do YT Music):
+  // o site passa a valer e a extensão não desfaz mais.
+  send({ volume: 0.25, muted: false });
+  const siteVolume = doc.createElement('div');
+  siteVolume.className = 'ytmusicPlayerVolumeSlider';
+  doc.body.append(siteVolume);
+  siteVolume.dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true }));
+  state.volume = 80;
+  doc.dispatchEvent(new dom.window.Event('volumechange'));
+  assert.equal(state.volume, 80);
+
+  // Mexer em outra coisa da página não libera.
+  send({ volume: 0.3, muted: false });
+  doc.body.dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true }));
+  state.volume = 100;
+  doc.dispatchEvent(new dom.window.Event('volumechange'));
+  assert.equal(state.volume, 30);
   dom.window.close();
 });
 
