@@ -15,6 +15,10 @@ export async function sendToTab(tabId, message) {
       target: { tabId },
       files: ['content.js']
     });
+    // Ponte com o player do site (ex.: avançar na Netflix). Opcional.
+    await chrome.scripting
+      .executeScript({ target: { tabId }, files: ['page-bridge.js'], world: 'MAIN' })
+      .catch(() => {});
     return await chrome.tabs.sendMessage(tabId, message);
   }
 }
