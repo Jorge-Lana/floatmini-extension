@@ -435,7 +435,7 @@
     /* Legendas copiadas do site. */
     .fm-captions {
       position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%);
-      max-width: 92%; padding: 2px 8px; border-radius: 4px; text-align: center;
+      width: max-content; max-width: 92%; padding: 2px 8px; border-radius: 4px; text-align: center;
       white-space: pre-line; line-height: 1.3; pointer-events: none;
       font-size: clamp(12px, 4.4vw, 30px); color: #fff; background: rgba(0, 0, 0, 0.6);
       transition: bottom 0.25s ease;
