@@ -4,6 +4,11 @@
 
 Mini janela flutuante **sempre no topo** para YouTube, YouTube Music, Spotify Web e vídeos da web.
 
+## Instalar
+
+- **Chrome, Edge, Brave e Opera:** [Chrome Web Store](https://chromewebstore.google.com/detail/iadkhoobiblaihcanofckjchegddgihh)
+- **Firefox (151+, desktop):** [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/floatmini/)
+
 O repositório tem duas partes:
 
 | Pasta | O que é |
