@@ -33,7 +33,7 @@ floatmini
 
 **Summary** (até 250 caracteres)
 ```
-Deixe o YouTube e o YouTube Music numa mini janela flutuante sempre por cima de tudo, com controles de reprodução, aleatório/repetir e volume. Sem anúncios e sem coleta de dados.
+YouTube, YouTube Music, Spotify, Netflix, Prime Video e Disney+ numa mini janela flutuante sempre por cima de tudo, com linha do tempo, legendas e volume. Sem anúncios e sem coleta de dados.
 ```
 
 **Description**: use o mesmo texto em português do `store/LISTING.md`, trocando a linha de requisito por:
