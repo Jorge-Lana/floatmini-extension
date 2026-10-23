@@ -17,30 +17,38 @@ Gere o `.zip` com `npm run zip:ext` (sai em `dist-extension/floatmini-extension-
 
 ### Descrição curta (até 132 caracteres) — vem do `manifest.json`
 
-> Mini janela flutuante sempre no topo para YouTube, YouTube Music, Spotify e vídeos da web.
+> Janela flutuante sempre no topo para YouTube, YouTube Music, Spotify, Netflix, Prime Video, Disney+ e vídeos da web.
 
 ### Descrição — Português (Brasil)
 
 ```
 Cansado de trocar de aba só para pausar uma música ou acompanhar um vídeo enquanto trabalha?
 
-O FloatMini coloca o YouTube e o YouTube Music numa mini janela flutuante que fica SEMPRE POR CIMA de tudo: editor de código, planilha, reunião, jogo, o que estiver na sua tela.
+O FloatMini coloca o YouTube, o YouTube Music, o Spotify e os seus serviços de streaming numa mini janela flutuante que fica SEMPRE POR CIMA de tudo: editor de código, planilha, reunião, jogo, o que estiver na sua tela.
 
 ▶ YOUTUBE
 • O próprio vídeo numa janela flutuante, redimensionável
+• Linha do tempo para ir a qualquer ponto do vídeo
 • Voltar/avançar 10 segundos, play/pausa e velocidade (1x a 2x)
+• Legendas aparecem na janela flutuante
 • Volume com botão de mudo
 • Teclado: espaço, ← →, ↑ ↓ e M
 
-♫ YOUTUBE MUSIC
+♫ YOUTUBE MUSIC E SPOTIFY
 • Mini player compacto com capa, faixa, artista e progresso
+• Clique na barra de progresso para mudar o tempo da música
 • Anterior, play/pausa, próxima, aleatório e repetir (todas / só esta)
 • Os botões mostram o estado atual, igual ao player do site
 • Volume com botão de mudo
 
+🎬 NETFLIX, PRIME VIDEO, DISNEY+ E OUTROS SITES DE VÍDEO
+• O vídeo em janela flutuante com linha do tempo, ±10 s, velocidade e volume
+• As legendas do site vão junto para a janela
+• Abra pelo botão da extensão ou pelo menu do botão direito
+
 ⚡ RÁPIDO DE USAR
 • Ícone integrado na barra do próprio player do YouTube e do YouTube Music
-• Atalho Alt + P na página do vídeo
+• Atalho Alt + P no YouTube, YouTube Music e Spotify
 • Também pelo botão da extensão ou pelo menu do botão direito
 • Ao fechar a janela, o vídeo volta para a página exatamente onde estava
 
@@ -48,8 +56,6 @@ O FloatMini coloca o YouTube e o YouTube Music numa mini janela flutuante que fi
 • Não coleta nenhum dado, não tem anúncios nem rastreadores
 • Funciona 100% no seu navegador
 • Código aberto (GPL-3.0): github.com/Jorge-Lana/floatmini-extension
-
-Spotify Web: suporte em beta.
 
 Requer Chrome 116 ou mais novo (também funciona no Edge, Brave e Opera).
 
@@ -61,23 +67,31 @@ Gostou? Apoie o projeto: buymeacoffee.com/jorgelana
 ```
 Tired of switching tabs just to pause a song or keep an eye on a video while you work?
 
-FloatMini puts YouTube and YouTube Music in a small floating window that stays ALWAYS ON TOP of everything: your code editor, spreadsheets, meetings, games — whatever is on your screen.
+FloatMini puts YouTube, YouTube Music, Spotify and your streaming services in a small floating window that stays ALWAYS ON TOP of everything: your code editor, spreadsheets, meetings, games — whatever is on your screen.
 
 ▶ YOUTUBE
 • The video itself in a resizable floating window
+• Timeline to jump to any point of the video
 • Back/forward 10 seconds, play/pause and speed (1x to 2x)
+• Subtitles show up in the floating window
 • Volume with mute button
 • Keyboard: space, ← →, ↑ ↓ and M
 
-♫ YOUTUBE MUSIC
+♫ YOUTUBE MUSIC AND SPOTIFY
 • Compact mini player with artwork, track, artist and progress
+• Click the progress bar to change the song position
 • Previous, play/pause, next, shuffle and repeat (all / one)
 • Buttons show the current state, just like the site's player
 • Volume with mute button
 
+🎬 NETFLIX, PRIME VIDEO, DISNEY+ AND OTHER VIDEO SITES
+• The video in a floating window with timeline, ±10 s, speed and volume
+• The site's subtitles come along to the window
+• Open it from the extension button or the right-click menu
+
 ⚡ QUICK TO USE
 • Icon built into the YouTube and YouTube Music player bar
-• Alt + P shortcut on the video page
+• Alt + P shortcut on YouTube, YouTube Music and Spotify
 • Also from the extension button or the right-click menu
 • When you close the window, the video goes back to the page exactly where it was
 
@@ -85,8 +99,6 @@ FloatMini puts YouTube and YouTube Music in a small floating window that stays A
 • Collects no data, no ads, no trackers
 • Runs 100% in your browser
 • Open source (GPL-3.0): github.com/Jorge-Lana/floatmini-extension
-
-Spotify Web: beta support.
 
 Requires Chrome 116 or newer (also works on Edge, Brave and Opera).
 

@@ -1,6 +1,6 @@
 # FloatMini - Extensão de Janela Flutuante Always-on-Top
 
-Extensão de navegador (Manifest V3) que coloca o vídeo do **YouTube**, a música do **YouTube Music** ou do **Spotify Web** numa janela compacta que fica **sempre por cima** dos outros programas, usando a API Document Picture-in-Picture do Chrome.
+Extensão de navegador (Manifest V3) que coloca o vídeo do **YouTube**, a música do **YouTube Music** ou do **Spotify Web** e o vídeo de serviços de streaming (**Netflix**, **Prime Video**, **Disney+** e outros sites) numa janela compacta que fica **sempre por cima** dos outros programas, usando a API Document Picture-in-Picture do Chrome.
 
 Requer Chrome, Edge, Brave ou Opera 116+, ou **Firefox 151+** (desktop).
 
@@ -32,9 +32,9 @@ Requer Chrome, Edge, Brave ou Opera 116+, ou **Firefox 151+** (desktop).
 
 | Site | Conteúdo |
 |------|----------|
-| YouTube e outros sites com vídeo | Só o vídeo, ocupando a janela inteira. Os controles aparecem numa barrinha ao mexer o mouse e somem sozinhos depois de 2 segundos: ⏪ 10s, Play/Pausar, 10s ⏩, velocidade (1x a 2x) e volume (mudo + controle deslizante). Teclas: espaço, ← →, ↑ ↓ (volume) e M (mudo). |
+| YouTube, Netflix, Prime Video, Disney+ e outros sites com vídeo | Só o vídeo, ocupando a janela inteira, com as legendas do site. Os controles aparecem ao mexer o mouse e somem sozinhos depois de 2 segundos: linha do tempo (clique ou arraste), ⏪ 10s, Play/Pausar, 10s ⏩, velocidade (1x a 2x) e volume (mudo + controle deslizante). Em sites de streaming, abra pelo botão da extensão ou pelo menu do botão direito. Teclas: espaço, ← →, ↑ ↓ (volume) e M (mudo). |
 | YouTube Music | Mini player ("tela menor") com capa, faixa, artista, barra de progresso, volume, aleatório, anterior, play, próxima e repetir. Teclas: ↑ ↓ (volume) e M (mudo). |
-| Spotify Web | Mesmo mini player, controlando os botões do próprio Spotify. |
+| Spotify Web | Mesmo mini player, controlando os botões do próprio Spotify (inclusive a barra de progresso). |
 
 Os botões de aleatório e repetir acionam os do próprio site e mostram o estado atual: ficam **azuis** quando ligados, e o ícone de repetir muda para 🔂 (com "1") quando está repetindo só a música atual. A ordem é desligado → repetir todas → repetir só esta.
 

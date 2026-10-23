@@ -2,7 +2,7 @@
 
 [![Buy me a coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=jorgelana&button_colour=5F7FFF&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00)](https://buymeacoffee.com/jorgelana)
 
-Mini janela flutuante **sempre no topo** para YouTube, YouTube Music, Spotify Web e vídeos da web.
+Mini janela flutuante **sempre no topo** para YouTube, YouTube Music, Spotify e serviços de streaming (Netflix, Prime Video, Disney+ e outros sites de vídeo).
 
 ## Instalar
 
