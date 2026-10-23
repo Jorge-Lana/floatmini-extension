@@ -247,6 +247,10 @@
         const v = findMainVideo();
         return v ? { current: v.currentTime, total: v.duration } : null;
       },
+      seek: (fraction) => {
+        const v = findMainVideo();
+        if (v && v.duration > 0) v.currentTime = fraction * v.duration;
+      },
       buttons: {
         // Layout novo (ytmusic-miniplayer) primeiro, depois o antigo.
         prev: ['.ytmusicPlayerControlsPreviousButton button', '.previous-button', '[aria-label*="anterior" i]', '[aria-label*="previous" i]'],
@@ -285,6 +289,17 @@
         current: parseClock($('[data-testid="playback-position"]')?.textContent),
         total: parseClock($('[data-testid="playback-duration"]')?.textContent)
       }),
+      // A barra de progresso do Spotify é um <input type=range> controlado pelo React.
+      seek: (fraction) => {
+        const input = $('[data-testid="playback-progressbar"] input[type="range"]');
+        if (!input) return;
+        const min = Number(input.min || 0);
+        const max = Number(input.max || 1);
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+        setter.call(input, String(Math.round(min + fraction * (max - min))));
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      },
       buttons: {
         prev: ['[data-testid="control-button-skip-back"]'],
         play: ['[data-testid="control-button-playpause"]'],
@@ -379,6 +394,8 @@
     .fm-track { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .fm-artist { font-size: 11px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .fm-progress { height: 3px; background: #334155; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+    .fm-seek { padding: 5px 0; margin: -1px 0 -5px; cursor: pointer; touch-action: none; }
+    .fm-seek:hover .fm-progress { height: 5px; }
     .fm-bar { height: 100%; width: 0%; background: #3b82f6; }
     .fm-volume { display: flex; align-items: center; gap: 6px; }
     .fm-volume .fm-btn { padding: 3px 5px; display: flex; align-items: center; }
@@ -677,8 +694,35 @@
     const progress = el(doc, 'div', 'fm-progress');
     const bar = el(doc, 'div', 'fm-bar');
     progress.append(bar);
+    // Área clicável maior que a barra: clicar ou arrastar muda o tempo da música.
+    const seekArea = el(doc, 'div', 'fm-seek');
+    seekArea.append(progress);
+    seekArea.title = 'Clique ou arraste para mudar o tempo';
+    let seeking = false;
+    const seekTo = (event) => {
+      const rect = progress.getBoundingClientRect();
+      if (!rect.width || typeof cfg.seek !== 'function') return;
+      const fraction = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+      bar.style.width = `${fraction * 100}%`;
+      cfg.seek(fraction);
+    };
+    seekArea.addEventListener('pointerdown', (e) => {
+      seeking = true;
+      try {
+        seekArea.setPointerCapture(e.pointerId);
+      } catch {
+        /* sem captura: o arraste funciona só dentro da barra */
+      }
+      seekTo(e);
+    });
+    seekArea.addEventListener('pointermove', (e) => seeking && seekTo(e));
+    const endSeek = () => {
+      seeking = false;
+    };
+    seekArea.addEventListener('pointerup', endSeek);
+    seekArea.addEventListener('pointercancel', endSeek);
     const volume = buildVolumeControl(doc, () => volumeTarget(null));
-    meta.append(track, artist, progress, volume.node);
+    meta.append(track, artist, seekArea, volume.node);
     main.append(cover, meta);
 
     const controls = el(doc, 'div', 'fm-music-controls');
@@ -746,7 +790,7 @@
       playBtn.textContent = cfg.isPlaying() ? '⏸' : '▶';
       const p = cfg.progress();
       const pct = p && p.total > 0 ? Math.min(100, (p.current / p.total) * 100) : 0;
-      bar.style.width = `${pct}%`;
+      if (!seeking) bar.style.width = `${pct}%`;
       renderToggles();
       volume.refresh();
     };
