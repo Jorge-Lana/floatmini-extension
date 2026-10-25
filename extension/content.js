@@ -259,7 +259,31 @@
     return text.trim().split(':').reduce((acc, part) => acc * 60 + Number(part), 0);
   }
 
+  // Feeds de vídeos curtos (um embaixo do outro): YouTube Shorts, TikTok e
+  // Reels do Instagram. Neles a janela ganha botões de anterior/próximo.
+  function isFeedPage() {
+    if (SITE === 'youtube') return location.pathname.startsWith('/shorts');
+    if (host === 'tiktok.com' || host.endsWith('.tiktok.com')) return true;
+    if (host === 'instagram.com' || host.endsWith('.instagram.com')) return /^\/(reels?)(\/|$)/.test(location.pathname);
+    return false;
+  }
+
+  // Vídeo do feed que está na tela: tocando e mais visível no viewport.
+  function findFeedVideo(exclude = null) {
+    const videos = [...document.querySelectorAll('video')].filter((v) => v !== exclude);
+    if (!videos.length) return null;
+    const visibleArea = (v) => {
+      const r = v.getBoundingClientRect();
+      const w = Math.max(0, Math.min(r.right, innerWidth) - Math.max(r.left, 0));
+      const h = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0));
+      return w * h;
+    };
+    const score = (v) => (v.paused ? 0 : 1e9) + visibleArea(v);
+    return videos.sort((a, b) => score(b) - score(a))[0];
+  }
+
   function findMainVideo() {
+    if (isFeedPage()) return findFeedVideo();
     if (SITE === 'youtube' || SITE === 'youtube-music') {
       const ytVideo = $('#movie_player video.html5-main-video') || $('video.html5-main-video');
       if (ytVideo) return ytVideo;
@@ -413,6 +437,7 @@
     }
     body.fm-active .fm-overlay-bottom { opacity: 1; pointer-events: auto; }
     .fm-overlay-bottom .fm-btn { flex-shrink: 0; }
+    .fm-overlay-bottom .fm-btn[hidden] { display: none; }
     /* Linha do tempo: clique ou arraste para ir a qualquer ponto. */
     .fm-timeline {
       position: absolute; left: 10px; right: 10px; bottom: 52px;
@@ -518,20 +543,82 @@
   function getVideoPipSize() {
     const size = settings.pipSize;
     if (size && typeof size === 'object' && size.width > 0 && size.height > 0) return size;
+    // Shorts, TikTok e Reels são verticais: janela em pé.
+    if (isFeedPage()) return { width: 300, height: 533 };
     return VIDEO_AUTO_SIZE;
+  }
+
+  function feedButton(dir) {
+    const down = dir > 0;
+    const selectors =
+      SITE === 'youtube'
+        ? [`#navigation-button-${down ? 'down' : 'up'} button`, `#navigation-button-${down ? 'down' : 'up'} [role="button"]`]
+        : [`button[data-e2e="arrow-${down ? 'down' : 'up'}"]`, `[data-e2e="arrow-${down ? 'down' : 'up'}"] button`];
+    for (const sel of selectors) {
+      const btn = document.querySelector(sel);
+      if (btn && isVisible(btn)) return btn;
+    }
+    // Rótulos acessíveis ("Próximo vídeo", "Next video", "Anterior"...).
+    const label = down ? /(pr[óo]xim|next|seguinte)/i : /(anterior|previous|prev\b)/i;
+    return [...document.querySelectorAll('button, [role="button"]')].find(
+      (b) => isVisible(b) && label.test(b.getAttribute('aria-label') || '') && /(v[íi]deo|video|reel|short)/i.test(b.getAttribute('aria-label') || '')
+    );
+  }
+
+  function scrollParent(node) {
+    for (let el = node?.parentElement; el; el = el.parentElement) {
+      const style = getComputedStyle(el);
+      if (/(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight + 10) return el;
+    }
+    return null;
+  }
+
+  // Vai para o vídeo anterior/próximo do feed: usa o botão do site ou rola
+  // a lista uma tela para cima/baixo, como a pessoa faria.
+  function moveFeed(dir, near) {
+    const btn = feedButton(dir);
+    if (btn) {
+      btn.click();
+      return;
+    }
+    const box = scrollParent(near);
+    if (box) box.scrollBy({ top: dir * box.clientHeight, behavior: 'smooth' });
+    else window.scrollBy({ top: dir * innerHeight, behavior: 'smooth' });
+  }
+
+  function waitFor(check, timeoutMs, stepMs = 120) {
+    return new Promise((resolve) => {
+      const started = Date.now();
+      const tick = () => {
+        const found = check(Date.now() - started);
+        if (found || Date.now() - started >= timeoutMs) resolve(found || null);
+        else setTimeout(tick, stepMs);
+      };
+      tick();
+    });
   }
 
   function buildVideoWindow(pipWindow, video) {
     const doc = preparePipDocument(pipWindow, 'fm-video');
     const wasPlaying = !video.paused;
 
-    // Guarda o lugar exato do vídeo para devolvê-lo ao fechar a janela.
-    const placeholder = document.createComment('floatmini-video');
-    const originalParent = video.parentNode;
-    originalParent.insertBefore(placeholder, video);
-
+    // Guarda o lugar exato do vídeo para devolvê-lo ao fechar a janela
+    // (ou ao trocar de vídeo no feed).
     const stage = el(doc, 'div', 'fm-stage');
-    stage.append(video);
+    let placeholder = null;
+    let originalParent = null;
+    const park = (v) => {
+      placeholder = document.createComment('floatmini-video');
+      originalParent = v.parentNode;
+      originalParent.insertBefore(placeholder, v);
+      stage.append(v);
+    };
+    const unpark = (v) => {
+      if (placeholder?.isConnected) placeholder.replaceWith(v);
+      else if (originalParent?.isConnected) originalParent.append(v);
+      placeholder = null;
+    };
+    park(video);
 
     const bottom = el(doc, 'div', 'fm-overlay-bottom');
     const playBtn = makeButton(doc, '', 'Play/Pausar (espaço)', () => (video.paused ? video.play() : video.pause()));
@@ -548,7 +635,13 @@
     const playIcon = el(doc, 'span', 'fm-ico');
     const playLabel = el(doc, 'span', 'fm-lbl');
     playBtn.append(playIcon, playLabel);
+    const prevVideo = makeButton(doc, '▲', 'Vídeo anterior (Page Up)', () => switchFeed(-1));
+    const nextVideo = makeButton(doc, '▼', 'Próximo vídeo (Page Down)', () => switchFeed(1));
+    prevVideo.classList.add('fm-feed');
+    nextVideo.classList.add('fm-feed');
     bottom.append(
+      prevVideo,
+      nextVideo,
       back,
       playBtn,
       fwd,
@@ -626,14 +719,61 @@
       playIcon.textContent = video.paused ? '▶' : '⏸';
       playLabel.textContent = video.paused ? 'Play' : 'Pausar';
       speedBtn.textContent = `${video.playbackRate}x`;
+      const feed = isFeedPage();
+      prevVideo.hidden = !feed;
+      nextVideo.hidden = !feed;
       volume.refresh();
       onTime();
     };
-    refresh();
     const mediaEvents = ['play', 'pause', 'ratechange', 'volumechange', 'durationchange'];
-    mediaEvents.forEach((type) => video.addEventListener(type, refresh));
-    video.addEventListener('timeupdate', onTime);
+    const bind = (v) => {
+      mediaEvents.forEach((type) => v.addEventListener(type, refresh));
+      v.addEventListener('timeupdate', onTime);
+    };
+    const unbind = (v) => {
+      mediaEvents.forEach((type) => v.removeEventListener(type, refresh));
+      v.removeEventListener('timeupdate', onTime);
+    };
+    refresh();
+    bind(video);
     const timer = setInterval(refresh, 1000);
+
+    // Feed (Shorts, TikTok, Reels): devolve o vídeo atual para a página, vai
+    // para o anterior/próximo e traz o novo vídeo para a janela.
+    let switching = false;
+    async function switchFeed(dir) {
+      if (switching) return;
+      switching = true;
+      const old = video;
+      const oldSrc = old.currentSrc;
+      const { muted, volume: level } = old;
+      unbind(old);
+      unpark(old);
+      moveFeed(dir, old);
+      const next = await waitFor((elapsed) => {
+        const v = findFeedVideo();
+        const changed = v && (v !== old || (v.currentSrc && v.currentSrc !== oldSrc));
+        // Normalmente o site já dá play no novo vídeo; se não der, aceita o
+        // novo vídeo da tela depois de um tempinho e a janela dá o play.
+        return changed && (!v.paused || elapsed > 1500) ? v : null;
+      }, 4000);
+      const target = next || old;
+      if (target !== old && !old.paused) old.pause();
+      video = target;
+      park(target);
+      bind(target);
+      target.volume = level;
+      target.muted = muted;
+      if (target.paused) {
+        target.play().catch(() => {
+          // Sem som o navegador sempre deixa tocar.
+          target.muted = true;
+          target.play().catch(() => {});
+        });
+      }
+      refresh();
+      switching = false;
+    }
 
     doc.addEventListener('keydown', (e) => {
       if (e.code === 'Space') {
@@ -651,6 +791,12 @@
         volume.step(-0.05);
       } else if (e.code === 'KeyM') {
         volume.toggleMute();
+      } else if (e.code === 'PageDown' && isFeedPage()) {
+        e.preventDefault();
+        switchFeed(1);
+      } else if (e.code === 'PageUp' && isFeedPage()) {
+        e.preventDefault();
+        switchFeed(-1);
       }
     });
 
@@ -660,14 +806,9 @@
       clearInterval(timer);
       clearInterval(captionTimer);
       clearTimeout(idleTimer);
-      mediaEvents.forEach((type) => video.removeEventListener(type, refresh));
-      video.removeEventListener('timeupdate', onTime);
+      unbind(video);
       const playing = !video.paused;
-      if (placeholder.isConnected) {
-        placeholder.replaceWith(video);
-      } else if (originalParent?.isConnected) {
-        originalParent.append(video);
-      }
+      unpark(video);
       if (playing && video.paused) video.play().catch(() => {});
     });
   }

@@ -46,6 +46,10 @@ O FloatMini coloca o YouTube, o YouTube Music, o Spotify e os seus serviços de 
 • As legendas do site vão junto para a janela
 • Abra pelo botão da extensão ou pelo menu do botão direito
 
+📱 YOUTUBE SHORTS, TIKTOK E REELS DO INSTAGRAM
+• Janela em pé, do tamanho certo para vídeos verticais
+• Botões ▲ ▼ (ou Page Up / Page Down) para passar de vídeo sem sair da janela
+
 ⚡ RÁPIDO DE USAR
 • Ícone integrado na barra do próprio player do YouTube e do YouTube Music
 • Atalho Alt + P no YouTube, YouTube Music e Spotify
@@ -88,6 +92,10 @@ FloatMini puts YouTube, YouTube Music, Spotify and your streaming services in a 
 • The video in a floating window with timeline, ±10 s, speed and volume
 • The site's subtitles come along to the window
 • Open it from the extension button or the right-click menu
+
+📱 YOUTUBE SHORTS, TIKTOK AND INSTAGRAM REELS
+• Portrait window sized for vertical videos
+• ▲ ▼ buttons (or Page Up / Page Down) to swipe to the next video without leaving the window
 
 ⚡ QUICK TO USE
 • Icon built into the YouTube and YouTube Music player bar
