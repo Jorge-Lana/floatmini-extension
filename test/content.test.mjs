@@ -682,3 +682,42 @@ test('ponte da página: seek na Netflix vira milissegundos na API do player', as
   assert.deepEqual(seeks, [12500]);
   dom.window.close();
 });
+
+test('TikTok/Shorts: ▼ troca para o próximo vídeo do feed e devolve o anterior', async () => {
+  const html = `<div id="feed">
+    <div class="item"><video id="v1"></video></div>
+    <div class="item"><video id="v2"></video></div>
+  </div><button data-e2e="arrow-down">↓</button><button data-e2e="arrow-up">↑</button>`;
+  const page = loadPage({ url: 'https://www.tiktok.com/foryou', html, active: true });
+  const v1 = page.document.getElementById('v1');
+  const v2 = page.document.getElementById('v2');
+  const m1 = fakeMedia(v1, { duration: 20 });
+  const m2 = fakeMedia(v2, { duration: 15, paused: true });
+  // O site: a seta para baixo pausa o atual e toca o próximo.
+  page.document.querySelector('[data-e2e="arrow-down"]').addEventListener('click', () => {
+    m1.paused = true;
+    m2.paused = false;
+  });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  assert.equal(pipDoc.querySelector('.fm-stage video').id, 'v1');
+  const next = [...pipDoc.querySelectorAll('.fm-btn')].find((b) => b.title.startsWith('Próximo vídeo'));
+  assert.ok(next && !next.hidden, 'botão ▼ aparece no feed');
+  next.click();
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(pipDoc.querySelector('.fm-stage video').id, 'v2');
+  assert.ok(page.document.querySelector('#feed .item video#v1'), 'o vídeo anterior volta para o lugar dele');
+  docPip.window.close();
+  assert.ok(page.document.querySelector('#feed .item video#v2'), 'ao fechar, o vídeo atual volta para o feed');
+});
+
+test('vídeo comum não mostra os botões de feed', async () => {
+  const page = loadPage({ url: 'https://www.youtube.com/watch?v=a', html: YT_HTML, active: true });
+  fakeMedia(page.document.querySelector('video'));
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const feedBtns = [...docPip.window.document.querySelectorAll('.fm-btn.fm-feed')];
+  assert.equal(feedBtns.length, 2);
+  assert.ok(feedBtns.every((b) => b.hidden));
+});

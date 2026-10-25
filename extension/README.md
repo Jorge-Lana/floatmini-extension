@@ -35,6 +35,7 @@ Requer Chrome, Edge, Brave ou Opera 116+, ou **Firefox 151+** (desktop).
 | YouTube, Netflix, Prime Video, Disney+ e outros sites com vídeo | Só o vídeo, ocupando a janela inteira, com as legendas do site. Os controles aparecem ao mexer o mouse e somem sozinhos depois de 2 segundos: linha do tempo (clique ou arraste), ⏪ 10s, Play/Pausar, 10s ⏩, velocidade (1x a 2x) e volume (mudo + controle deslizante). Em sites de streaming, abra pelo botão da extensão ou pelo menu do botão direito. Teclas: espaço, ← →, ↑ ↓ (volume) e M (mudo). |
 | YouTube Music | Mini player ("tela menor") com capa, faixa, artista, barra de progresso, volume, aleatório, anterior, play, próxima e repetir. Teclas: ↑ ↓ (volume) e M (mudo). |
 | Spotify Web | Mesmo mini player, controlando os botões do próprio Spotify (inclusive a barra de progresso). |
+| YouTube Shorts, TikTok e Reels do Instagram | Janela em pé (300×533) com os mesmos controles do vídeo e mais ▲ ▼ (ou Page Up / Page Down) para ir ao vídeo anterior/próximo do feed sem sair da janela. |
 
 Os botões de aleatório e repetir acionam os do próprio site e mostram o estado atual: ficam **azuis** quando ligados, e o ícone de repetir muda para 🔂 (com "1") quando está repetindo só a música atual. A ordem é desligado → repetir todas → repetir só esta.
 
