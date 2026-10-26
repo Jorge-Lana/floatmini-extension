@@ -721,3 +721,35 @@ test('vídeo comum não mostra os botões de feed', async () => {
   assert.equal(feedBtns.length, 2);
   assert.ok(feedBtns.every((b) => b.hidden));
 });
+
+test('legendas: site desconhecido (ex.: Globoplay) com classe de legenda perto do player', async () => {
+  const html = `<div class="player"><div class="media"><video></video></div>
+    <div class="settings-menu" role="menu"><div class="subtitle-option">Legendas: Português</div></div>
+    <div class="player-subtitles"><span class="subtitle-line">Bom dia, Brasil!</span></div>
+    <div class="controls"><button class="caption-toggle">CC</button></div></div>`;
+  const page = loadPage({ url: 'https://globoplay.globo.com/v/123/', html, active: true });
+  fakeMedia(page.document.querySelector('video'), { duration: 3000 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  await new Promise((r) => setTimeout(r, 300));
+  const captions = docPip.window.document.querySelector('.fm-captions');
+  assert.equal(captions.textContent, 'Bom dia, Brasil!');
+  page.document.querySelector('.subtitle-line').textContent = '';
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(captions.textContent, '');
+});
+
+test('legendas: faixa de texto escondida (players com legenda própria)', async () => {
+  const page = loadPage({ url: 'https://exemplo.com/assistir', html: '<div><video></video></div>', active: true });
+  const video = page.document.querySelector('video');
+  fakeMedia(video, { duration: 100 });
+  const track = { kind: 'subtitles', mode: 'hidden', activeCues: [{ text: '<i>Olá</i> de novo' }] };
+  Object.defineProperty(video, 'textTracks', { value: [track], configurable: true });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(docPip.window.document.querySelector('.fm-captions').textContent, 'Olá de novo');
+  track.mode = 'showing'; // o navegador já desenha: não duplica
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(docPip.window.document.querySelector('.fm-captions').textContent, '');
+});
