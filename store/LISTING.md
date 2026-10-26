@@ -17,14 +17,16 @@ Gere o `.zip` com `npm run zip:ext` (sai em `dist-extension/floatmini-extension-
 
 ### Descrição curta (até 132 caracteres) — vem do `manifest.json`
 
-> Janela flutuante sempre no topo para YouTube, YouTube Music, Spotify, Netflix, Prime Video, Disney+ e vídeos da web.
+> Mini janela flutuante sempre no topo para YouTube, YouTube Music, Spotify e vídeos da web.
+
+Não liste muitas marcas na descrição: a Chrome Web Store rejeitou a 1.4.3 por "spam de palavra-chave" com "YouTube, YouTube Music, Spotify, Netflix, Prime Video, Disney+".
 
 ### Descrição — Português (Brasil)
 
 ```
 Cansado de trocar de aba só para pausar uma música ou acompanhar um vídeo enquanto trabalha?
 
-O FloatMini coloca o YouTube, o YouTube Music, o Spotify e os seus serviços de streaming numa mini janela flutuante que fica SEMPRE POR CIMA de tudo: editor de código, planilha, reunião, jogo, o que estiver na sua tela.
+O FloatMini coloca seus vídeos e músicas numa mini janela flutuante que fica SEMPRE POR CIMA de tudo: editor de código, planilha, reunião, jogo, o que estiver na sua tela.
 
 ▶ YOUTUBE
 • O próprio vídeo numa janela flutuante, redimensionável
@@ -41,7 +43,7 @@ O FloatMini coloca o YouTube, o YouTube Music, o Spotify e os seus serviços de 
 • Os botões mostram o estado atual, igual ao player do site
 • Volume com botão de mudo
 
-🎬 NETFLIX, PRIME VIDEO, DISNEY+ E OUTROS SITES DE VÍDEO
+🎬 SITES DE STREAMING E OUTROS VÍDEOS
 • O vídeo em janela flutuante com linha do tempo, ±10 s, velocidade e volume
 • As legendas do site vão junto para a janela
 • Abra pelo botão da extensão ou pelo menu do botão direito
@@ -71,7 +73,7 @@ Gostou? Apoie o projeto: buymeacoffee.com/jorgelana
 ```
 Tired of switching tabs just to pause a song or keep an eye on a video while you work?
 
-FloatMini puts YouTube, YouTube Music, Spotify and your streaming services in a small floating window that stays ALWAYS ON TOP of everything: your code editor, spreadsheets, meetings, games — whatever is on your screen.
+FloatMini puts your videos and music in a small floating window that stays ALWAYS ON TOP of everything: your code editor, spreadsheets, meetings, games — whatever is on your screen.
 
 ▶ YOUTUBE
 • The video itself in a resizable floating window
@@ -88,7 +90,7 @@ FloatMini puts YouTube, YouTube Music, Spotify and your streaming services in a 
 • Buttons show the current state, just like the site's player
 • Volume with mute button
 
-🎬 NETFLIX, PRIME VIDEO, DISNEY+ AND OTHER VIDEO SITES
+🎬 STREAMING SITES AND OTHER VIDEOS
 • The video in a floating window with timeline, ±10 s, speed and volume
 • The site's subtitles come along to the window
 • Open it from the extension button or the right-click menu
