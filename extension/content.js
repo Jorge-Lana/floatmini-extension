@@ -235,16 +235,64 @@
     '.dss-subtitle-renderer-cue'
   ];
 
-  function readSiteCaptions() {
+  const nodeText = (node) => (node.innerText ?? node.textContent ?? '').trim();
+
+  // Players que usam faixas de legenda "escondidas" (mode = hidden) e
+  // desenham o texto eles mesmos: lê as falas ativas direto da faixa.
+  function readTrackCaptions(video) {
+    const tracks = [...(video?.textTracks || [])];
+    // Faixa "showing" o navegador já desenha dentro do próprio vídeo.
+    if (tracks.some((t) => t.mode === 'showing')) return '';
+    const lines = [];
+    for (const track of tracks) {
+      if (track.mode !== 'hidden' || !/^(subtitles|captions)$/.test(track.kind)) continue;
+      for (const cue of track.activeCues || []) {
+        const text = String(cue.text || '').replace(/<[^>]+>/g, '').trim();
+        if (text && !lines.includes(text)) lines.push(text);
+      }
+    }
+    return lines.join('\n');
+  }
+
+  // Qualquer outro site (Globoplay, Max, Crunchyroll...): procura, perto do
+  // player, um elemento de legenda pelo nome da classe/id.
+  const CAPTION_HINT =
+    '[class*="subtitle" i], [class*="caption" i], [class*="legenda" i], [class*="timedtext" i], [class*="texttrack" i], [id*="subtitle" i], [id*="caption" i], [id*="legenda" i]';
+
+  function readNearbyCaptions(anchor) {
+    let root = anchor?.nodeType === 1 ? anchor : anchor?.parentElement;
+    for (let i = 0; i < 5 && root?.parentElement && root.parentElement !== document.body; i++) root = root.parentElement;
+    if (!root) return '';
+    const found = [];
+    for (const node of root.querySelectorAll(CAPTION_HINT)) {
+      if (node.closest('[role="menu"], [role="menuitem"], [role="listbox"], [aria-hidden="true"], button, select')) continue;
+      if (node.querySelector('button, input, select, [role="button"]')) continue;
+      if (!isVisible(node)) continue;
+      const text = nodeText(node);
+      if (!text || text.length > 300) continue;
+      found.push({ node, text });
+    }
+    // Fica com os elementos mais externos (o texto dos internos já está neles).
+    const lines = [];
+    for (const { node, text } of found) {
+      if (found.some((f) => f.node !== node && f.node.contains(node))) continue;
+      if (!lines.includes(text)) lines.push(text);
+    }
+    return lines.join('\n');
+  }
+
+  function readSiteCaptions(video, anchor) {
     for (const sel of CAPTION_SELECTORS) {
       const lines = [];
       for (const node of document.querySelectorAll(sel)) {
-        const text = (node.innerText ?? node.textContent ?? '').trim();
+        const text = nodeText(node);
         if (text && !lines.includes(text)) lines.push(text);
       }
       if (lines.length) return lines.join('\n');
     }
-    return '';
+    // Em feeds (TikTok, Reels) o texto do post fica perto do vídeo e
+    // pareceria legenda: lá só vale a faixa de legenda.
+    return readTrackCaptions(video) || (isFeedPage() ? '' : readNearbyCaptions(anchor));
   }
 
   function cleanTitle(title) {
@@ -688,7 +736,7 @@
 
     const captions = el(doc, 'div', 'fm-captions');
     const captionTimer = setInterval(() => {
-      const text = readSiteCaptions();
+      const text = readSiteCaptions(video, placeholder || originalParent);
       if (captions.textContent !== text) captions.textContent = text;
     }, 200);
 
