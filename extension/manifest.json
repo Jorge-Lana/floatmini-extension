@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "FloatMini - Janela Flutuante Always-on-Top",
-  "version": "1.4.3",
-  "description": "Janela flutuante sempre no topo para YouTube, YouTube Music, Spotify, Netflix, Prime Video, Disney+ e vídeos da web.",
+  "version": "1.4.4",
+  "description": "Mini janela flutuante sempre no topo para YouTube, YouTube Music, Spotify e vídeos da web.",
   "minimum_chrome_version": "116",
   "permissions": [
     "activeTab",
