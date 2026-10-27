@@ -18,6 +18,8 @@
   const VOLUME_WORD = /volume|mute|mudo|som\b/i;
   let desired = null; // { percent, muted }
   let applying = false; // eventos disparados pela própria extensão
+  let lastPageInput = 0; // último clique/rolagem da pessoa nesta página
+  const PAGE_INPUT_MS = 1500;
 
   const player = () => {
     const p = document.getElementById('movie_player');
@@ -62,6 +64,12 @@
 
   function siteChanged() {
     if (!desired) return;
+    // A pessoa acabou de mexer na página (ex.: no volume do site, mesmo num
+    // controle que não reconhecemos): o site passa a valer.
+    if (Date.now() - lastPageInput < PAGE_INPUT_MS) {
+      desired = null;
+      return;
+    }
     const p = player();
     if (!p) return;
     const percent = p.getVolume?.();
@@ -86,6 +94,15 @@
   for (const type of ['pointerdown', 'wheel', 'input', 'change']) {
     document.addEventListener(type, releaseOnSiteInput, true);
   }
+  for (const type of ['pointerdown', 'pointermove', 'wheel']) {
+    document.addEventListener(
+      type,
+      (e) => {
+        if (e.isTrusted && (type !== 'pointermove' || e.buttons)) lastPageInput = Date.now();
+      },
+      true
+    );
+  }
   document.addEventListener(
     'keydown',
     (e) => {
@@ -107,6 +124,10 @@
     try {
       req = JSON.parse(event.detail);
     } catch {
+      return;
+    }
+    if (req.release) {
+      desired = null;
       return;
     }
     desired = {

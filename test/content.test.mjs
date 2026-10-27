@@ -585,6 +585,12 @@ test('ponte de volume: usa a API do player e desfaz mudanças do site', async ()
   state.volume = 100;
   doc.dispatchEvent(new dom.window.Event('volumechange'));
   assert.equal(state.volume, 30);
+
+  // Janela fechada: a extensão para de corrigir o volume.
+  doc.dispatchEvent(new dom.window.CustomEvent('floatmini:volume', { detail: JSON.stringify({ release: true }) }));
+  state.volume = 90;
+  doc.dispatchEvent(new dom.window.Event('volumechange'));
+  assert.equal(state.volume, 90);
   dom.window.close();
 });
 
@@ -752,4 +758,15 @@ test('legendas: faixa de texto escondida (players com legenda própria)', async 
   track.mode = 'showing'; // o navegador já desenha: não duplica
   await new Promise((r) => setTimeout(r, 300));
   assert.equal(docPip.window.document.querySelector('.fm-captions').textContent, '');
+});
+
+test('fechar a janela flutuante libera o volume do site', async () => {
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html: YTM_MINIPLAYER + '<video></video>', active: true });
+  fakeMedia(page.document.querySelector('video'));
+  const asked = [];
+  page.document.addEventListener('floatmini:volume', (e) => asked.push(JSON.parse(e.detail)));
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  docPip.window.close();
+  assert.deepEqual(asked.at(-1), { release: true });
 });
