@@ -689,7 +689,7 @@ test('ponte da página: seek na Netflix vira milissegundos na API do player', as
   dom.window.close();
 });
 
-test('TikTok/Shorts: ▼ troca para o próximo vídeo do feed e devolve o anterior', async () => {
+test('TikTok/Shorts: rolar na janela troca para o próximo vídeo do feed e devolve o anterior', async () => {
   const html = `<div id="feed">
     <div class="item"><video id="v1"></video></div>
     <div class="item"><video id="v2"></video></div>
@@ -708,9 +708,8 @@ test('TikTok/Shorts: ▼ troca para o próximo vídeo do feed e devolve o anteri
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
   const pipDoc = docPip.window.document;
   assert.equal(pipDoc.querySelector('.fm-stage video').id, 'v1');
-  const next = [...pipDoc.querySelectorAll('.fm-btn')].find((b) => b.title.startsWith('Próximo vídeo'));
-  assert.ok(next && !next.hidden, 'botão ▼ aparece no feed');
-  next.click();
+  // Rolar para baixo na janela passa para o próximo vídeo.
+  pipDoc.querySelector('.fm-stage').dispatchEvent(new docPip.window.WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true }));
   await new Promise((r) => setTimeout(r, 400));
   assert.equal(pipDoc.querySelector('.fm-stage video').id, 'v2');
   assert.ok(page.document.querySelector('#feed .item video#v1'), 'o vídeo anterior volta para o lugar dele');
@@ -718,14 +717,19 @@ test('TikTok/Shorts: ▼ troca para o próximo vídeo do feed e devolve o anteri
   assert.ok(page.document.querySelector('#feed .item video#v2'), 'ao fechar, o vídeo atual volta para o feed');
 });
 
-test('vídeo comum não mostra os botões de feed', async () => {
+test('vídeo comum: rolar na janela não troca de vídeo e ↑ ↓ continuam no volume', async () => {
   const page = loadPage({ url: 'https://www.youtube.com/watch?v=a', html: YT_HTML, active: true });
-  fakeMedia(page.document.querySelector('video'));
+  const media = fakeMedia(page.document.querySelector('video'));
+  media.volume = 0.5;
   const docPip = fakeDocumentPip(page.window);
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
-  const feedBtns = [...docPip.window.document.querySelectorAll('.fm-btn.fm-feed')];
-  assert.equal(feedBtns.length, 2);
-  assert.ok(feedBtns.every((b) => b.hidden));
+  const pipDoc = docPip.window.document;
+  pipDoc.querySelector('.fm-stage').dispatchEvent(new docPip.window.WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true }));
+  await new Promise((r) => setTimeout(r, 200));
+  assert.ok(pipDoc.querySelector('.fm-stage video'));
+  pipDoc.dispatchEvent(new docPip.window.KeyboardEvent('keydown', { code: 'ArrowUp' }));
+  assert.ok(Math.abs(media.volume - 0.55) < 1e-9);
+  assert.equal(pipDoc.querySelectorAll('.fm-feed').length, 0);
 });
 
 test('legendas: site desconhecido (ex.: Globoplay) com classe de legenda perto do player', async () => {
