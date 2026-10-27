@@ -854,6 +854,7 @@
       clearInterval(timer);
       clearInterval(captionTimer);
       clearTimeout(idleTimer);
+      releaseSiteVolume();
       unbind(video);
       const playing = !video.paused;
       unpark(video);
@@ -875,6 +876,12 @@
 
   // No YouTube/YT Music o player reaplica o volume dele. Avisa o yt-volume.js
   // (mundo da página), que usa a API do player para o valor ficar.
+  // Ao fechar a janela flutuante, o volume volta a ser só do site.
+  function releaseSiteVolume() {
+    if (SITE !== 'youtube' && SITE !== 'youtube-music') return;
+    document.dispatchEvent(new CustomEvent('floatmini:volume', { detail: JSON.stringify({ release: true }) }));
+  }
+
   function syncSiteVolume(media) {
     if (SITE !== 'youtube' && SITE !== 'youtube-music') return;
     const detail = JSON.stringify({ volume: media.volume, muted: media.muted });
@@ -1117,7 +1124,10 @@
         volume.toggleMute();
       }
     });
-    pipWindow.addEventListener('pagehide', () => clearInterval(timer));
+    pipWindow.addEventListener('pagehide', () => {
+      clearInterval(timer);
+      releaseSiteVolume();
+    });
   }
 
   async function toggleFloat() {
