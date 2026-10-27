@@ -50,7 +50,7 @@ O FloatMini coloca seus vídeos e músicas numa mini janela flutuante que fica S
 
 📱 YOUTUBE SHORTS, TIKTOK E REELS DO INSTAGRAM
 • Janela em pé, do tamanho certo para vídeos verticais
-• Botões ▲ ▼ (ou Page Up / Page Down) para passar de vídeo sem sair da janela
+• Role ou arraste para cima/baixo na janela para passar de vídeo, como no celular (ou use ↑ ↓)
 
 ⚡ RÁPIDO DE USAR
 • Ícone integrado na barra do próprio player do YouTube e do YouTube Music
@@ -97,7 +97,7 @@ FloatMini puts your videos and music in a small floating window that stays ALWAY
 
 📱 YOUTUBE SHORTS, TIKTOK AND INSTAGRAM REELS
 • Portrait window sized for vertical videos
-• ▲ ▼ buttons (or Page Up / Page Down) to swipe to the next video without leaving the window
+• Scroll or drag up/down in the window to swipe to the next video, like on your phone (or use ↑ ↓)
 
 ⚡ QUICK TO USE
 • Icon built into the YouTube and YouTube Music player bar

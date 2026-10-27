@@ -485,7 +485,6 @@
     }
     body.fm-active .fm-overlay-bottom { opacity: 1; pointer-events: auto; }
     .fm-overlay-bottom .fm-btn { flex-shrink: 0; }
-    .fm-overlay-bottom .fm-btn[hidden] { display: none; }
     /* Linha do tempo: clique ou arraste para ir a qualquer ponto. */
     .fm-timeline {
       position: absolute; left: 10px; right: 10px; bottom: 52px;
@@ -683,13 +682,7 @@
     const playIcon = el(doc, 'span', 'fm-ico');
     const playLabel = el(doc, 'span', 'fm-lbl');
     playBtn.append(playIcon, playLabel);
-    const prevVideo = makeButton(doc, '▲', 'Vídeo anterior (Page Up)', () => switchFeed(-1));
-    const nextVideo = makeButton(doc, '▼', 'Próximo vídeo (Page Down)', () => switchFeed(1));
-    prevVideo.classList.add('fm-feed');
-    nextVideo.classList.add('fm-feed');
     bottom.append(
-      prevVideo,
-      nextVideo,
       back,
       playBtn,
       fwd,
@@ -767,9 +760,6 @@
       playIcon.textContent = video.paused ? '▶' : '⏸';
       playLabel.textContent = video.paused ? 'Play' : 'Pausar';
       speedBtn.textContent = `${video.playbackRate}x`;
-      const feed = isFeedPage();
-      prevVideo.hidden = !feed;
-      nextVideo.hidden = !feed;
       volume.refresh();
       onTime();
     };
@@ -831,6 +821,13 @@
         seekBy(video, -5);
       } else if (e.code === 'ArrowRight') {
         seekBy(video, 5);
+      } else if ((e.code === 'ArrowDown' || e.code === 'PageDown') && isFeedPage()) {
+        // No feed as setas passam de vídeo, como no próprio site.
+        e.preventDefault();
+        switchFeed(1);
+      } else if ((e.code === 'ArrowUp' || e.code === 'PageUp') && isFeedPage()) {
+        e.preventDefault();
+        switchFeed(-1);
       } else if (e.code === 'ArrowUp') {
         e.preventDefault();
         volume.step(0.05);
@@ -839,13 +836,40 @@
         volume.step(-0.05);
       } else if (e.code === 'KeyM') {
         volume.toggleMute();
-      } else if (e.code === 'PageDown' && isFeedPage()) {
-        e.preventDefault();
-        switchFeed(1);
-      } else if (e.code === 'PageUp' && isFeedPage()) {
-        e.preventDefault();
-        switchFeed(-1);
       }
+    });
+
+    // No feed (Shorts, TikTok, Reels) passa de vídeo rolando ou arrastando
+    // na janela, como no celular. Fora dos controles.
+    const onControls = (target) => target instanceof pipWindow.Element && !!target.closest('.fm-overlay-bottom, .fm-timeline');
+    let wheelSum = 0;
+    let wheelLock = 0;
+    doc.addEventListener(
+      'wheel',
+      (e) => {
+        if (!isFeedPage() || onControls(e.target)) return;
+        e.preventDefault();
+        if (Date.now() < wheelLock) return;
+        wheelSum += e.deltaY;
+        if (Math.abs(wheelSum) >= 60) {
+          const dir = wheelSum > 0 ? 1 : -1;
+          wheelSum = 0;
+          wheelLock = Date.now() + 800; // um vídeo por gesto
+          switchFeed(dir);
+        }
+      },
+      { passive: false }
+    );
+    let swipe = null;
+    doc.addEventListener('pointerdown', (e) => {
+      swipe = isFeedPage() && !onControls(e.target) ? { x: e.clientX, y: e.clientY } : null;
+    });
+    doc.addEventListener('pointerup', (e) => {
+      if (!swipe) return;
+      const dx = e.clientX - swipe.x;
+      const dy = e.clientY - swipe.y;
+      swipe = null;
+      if (Math.abs(dy) >= 80 && Math.abs(dy) > Math.abs(dx) * 1.5) switchFeed(dy < 0 ? 1 : -1);
     });
 
     if (wasPlaying && video.paused) video.play().catch(() => {});
