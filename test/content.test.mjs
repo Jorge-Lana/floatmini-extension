@@ -118,9 +118,11 @@ test('Alt+P na página abre a janela flutuante com o vídeo e devolve ao fechar'
   assert.ok(docPip.window, 'janela flutuante aberta');
   const pipDoc = docPip.window.document;
   assert.equal(video.ownerDocument, pipDoc, 'o vídeo foi movido para a janela flutuante');
-  const labels = [...pipDoc.querySelectorAll('button')].map((b) => b.textContent);
-  assert.ok(labels.includes('⏪10s') && labels.includes('10s ⏩'));
-  assert.ok(pipDoc.querySelectorAll('.fm-overlay-bottom .fm-lbl').length >= 3, 'rótulos que somem em janela estreita');
+  // Visual minimalista: ícones SVG (sem emojis), com dica no title.
+  const icons = Object.fromEntries([...pipDoc.querySelectorAll('.fm-overlay-bottom .fm-btn')].map((b) => [b.title, b.dataset.icon]));
+  assert.equal(icons['Voltar 10 segundos (←)'], 'rewind');
+  assert.equal(icons['Avançar 10 segundos (→)'], 'forward');
+  assert.ok(pipDoc.querySelector('.fm-shade'), 'degradê embaixo dos controles');
 
   // Alt+P de novo fecha e o vídeo volta exatamente para o mesmo lugar.
   page.document.dispatchEvent(new page.window.KeyboardEvent('keydown', { code: 'KeyP', altKey: true, bubbles: true }));
@@ -180,7 +182,7 @@ test('Spotify: mini player mostra a faixa e controla os botões do site', async 
   assert.equal(pipDoc.querySelector('.fm-track').textContent, 'Minha Música');
   assert.equal(pipDoc.querySelector('.fm-artist').textContent, 'Artista');
   assert.equal(pipDoc.querySelector('.fm-bar').style.width, '25%');
-  assert.equal(pipDoc.querySelector('.fm-primary').textContent, '⏸', 'aria-label "Pausar" = tocando');
+  assert.equal(pipDoc.querySelector('.fm-primary').dataset.icon, 'pause', 'aria-label "Pausar" = tocando');
 
   pipDoc.querySelector('button[title="Próxima"]').click();
   assert.equal(nextClicks, 1);
