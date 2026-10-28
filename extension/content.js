@@ -489,16 +489,23 @@
     html, body { height: 100%; }
     body {
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: #0f172a; color: #f8fafc; overflow: hidden; user-select: none;
+      background: #0a0a0a; color: #fff; overflow: hidden; user-select: none;
     }
     button { font: inherit; }
+    /* Visual minimalista: ícones brancos, sem caixas em volta. */
     .fm-btn {
-      background: rgba(30, 41, 59, 0.92); color: #e2e8f0;
-      border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 6px;
-      padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: transparent; color: #fff; border: 0; border-radius: 50%;
+      padding: 6px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+      opacity: 0.88; transition: opacity 0.15s ease, background 0.15s ease, transform 0.1s ease;
     }
-    .fm-btn:hover { background: #334155; color: #fff; }
-    .fm-btn.fm-primary { background: #2563eb; border-color: #3b82f6; color: #fff; }
+    .fm-btn:hover { opacity: 1; background: rgba(255, 255, 255, 0.12); }
+    .fm-btn:active { transform: scale(0.92); }
+    .fm-btn svg { width: 22px; height: 22px; fill: currentColor; display: block; pointer-events: none; }
+    .fm-btn.fm-primary { background: #fff; color: #000; opacity: 1; width: 38px; height: 38px; }
+    .fm-btn.fm-primary:hover { background: #e5e5e5; }
+    .fm-btn.fm-primary svg { width: 24px; height: 24px; }
+    .fm-btn.fm-speed { border-radius: 6px; min-width: 34px; font-variant-numeric: tabular-nums; }
 
     /* Vídeo */
     body.fm-video { background: #000; }
@@ -507,53 +514,57 @@
       width: 100% !important; height: 100% !important; object-fit: contain;
       position: static !important; left: auto !important; top: auto !important; transform: none !important;
     }
-    /* Só o vídeo; os controles aparecem numa barrinha quando o mouse mexe. */
+    /* Degradê escuro embaixo, só com os controles visíveis. */
+    .fm-shade {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 130px; pointer-events: none;
+      background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.82));
+      opacity: 0; transition: opacity 0.25s ease;
+    }
+    body.fm-active .fm-shade { opacity: 1; }
     .fm-overlay-bottom {
-      position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
-      display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 4px;
-      max-width: calc(100% - 16px); padding: 5px 6px; border-radius: 10px;
-      background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      position: absolute; left: 0; right: 0; bottom: 0;
+      display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; padding: 0 10px 8px;
       opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
     }
     body.fm-active .fm-overlay-bottom { opacity: 1; pointer-events: auto; }
     .fm-overlay-bottom .fm-btn { flex-shrink: 0; }
-    /* Linha do tempo: clique ou arraste para ir a qualquer ponto. */
+    /* Linha do tempo fina; engrossa com o mouse em cima. */
     .fm-timeline {
-      position: absolute; left: 10px; right: 10px; bottom: 52px;
-      display: flex; align-items: center; gap: 8px;
-      font-size: 11px; font-variant-numeric: tabular-nums; color: #e2e8f0;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      position: absolute; left: 12px; right: 12px; bottom: 50px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 11px; font-variant-numeric: tabular-nums; color: #e5e5e5;
       opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
     }
     body.fm-active .fm-timeline { opacity: 1; pointer-events: auto; }
     .fm-timeline[hidden] { display: none; }
     .fm-timeline input[type='range'] {
-      flex: 1; min-width: 0; height: 4px; cursor: pointer;
-      -webkit-appearance: none; appearance: none; border-radius: 4px;
-      background: linear-gradient(to right, #3b82f6 var(--fm-pct, 0%), rgba(255, 255, 255, 0.3) var(--fm-pct, 0%));
+      flex: 1; min-width: 0; height: 3px; cursor: pointer; transition: height 0.15s ease;
+      -webkit-appearance: none; appearance: none; border-radius: 3px; outline: none;
+      background: linear-gradient(to right, #ef4444 var(--fm-pct, 0%), rgba(255, 255, 255, 0.3) var(--fm-pct, 0%));
     }
+    .fm-timeline:hover input[type='range'] { height: 5px; }
     .fm-timeline input[type='range']::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 0;
+      -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #ef4444; border: 0;
+      transform: scale(0); transition: transform 0.15s ease;
     }
-    .fm-timeline input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 0; }
+    .fm-timeline:hover input[type='range']::-webkit-slider-thumb { transform: scale(1); }
+    .fm-timeline input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #ef4444; border: 0; }
     /* Legendas copiadas do site. */
     .fm-captions {
       position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%);
-      width: max-content; max-width: 92%; padding: 2px 8px; border-radius: 4px; text-align: center;
+      width: max-content; max-width: 92%; padding: 2px 10px; border-radius: 4px; text-align: center;
       white-space: pre-line; line-height: 1.3; pointer-events: none;
       font-size: clamp(12px, 4.4vw, 30px); color: #fff; background: rgba(0, 0, 0, 0.6);
       transition: bottom 0.25s ease;
     }
     .fm-captions:empty { display: none; }
-    body.fm-active .fm-captions { bottom: 84px; }
-    .fm-overlay-bottom .fm-volume input[type='range'] { width: 64px; }
-    .fm-lbl { margin-left: 3px; }
-    /* Janela estreita: só ícones e volume menor, tudo numa linha. */
-    @media (max-width: 520px) {
-      .fm-lbl { display: none; }
-      .fm-overlay-bottom { gap: 3px; padding: 4px 5px; }
-      .fm-overlay-bottom .fm-btn { padding: 4px 7px; }
+    body.fm-active .fm-captions { bottom: 78px; }
+    .fm-overlay-bottom .fm-volume input[type='range'] { width: 70px; }
+    /* Janela estreita: ícones menores e volume curto. */
+    @media (max-width: 420px) {
+      .fm-overlay-bottom { gap: 2px; padding: 0 6px 6px; }
+      .fm-btn svg { width: 20px; height: 20px; }
+      .fm-btn.fm-primary { width: 34px; height: 34px; }
       .fm-overlay-bottom .fm-volume input[type='range'] { width: 48px; }
     }
     @media (max-width: 300px) {
@@ -562,37 +573,40 @@
     body.fm-video:not(.fm-active) { cursor: none; }
 
     /* Música (YouTube Music / Spotify) */
-    body.fm-music { display: flex; flex-direction: column; padding: 10px; gap: 8px; }
-    .fm-music-main { display: flex; gap: 10px; align-items: center; min-height: 0; flex: 1; }
-    .fm-cover {
-      width: 64px; height: 64px; border-radius: 8px; object-fit: cover; flex-shrink: 0;
-      background: #1e293b; border: 1px solid rgba(255,255,255,0.08);
-    }
+    body.fm-music { display: flex; flex-direction: column; padding: 12px; gap: 6px; }
+    .fm-music-main { display: flex; gap: 12px; align-items: center; min-height: 0; flex: 1; }
+    .fm-cover { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #1f1f1f; }
     .fm-meta { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
-    .fm-track { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .fm-artist { font-size: 11px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .fm-progress { height: 3px; background: #334155; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+    .fm-track { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fm-artist { font-size: 12px; color: #a3a3a3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fm-progress { height: 3px; background: rgba(255, 255, 255, 0.2); border-radius: 3px; overflow: hidden; margin-top: 4px; transition: height 0.15s ease; }
     .fm-seek { padding: 5px 0; margin: -1px 0 -5px; cursor: pointer; touch-action: none; }
     .fm-seek:hover .fm-progress { height: 5px; }
-    .fm-bar { height: 100%; width: 0%; background: #3b82f6; }
-    .fm-volume { display: flex; align-items: center; gap: 6px; }
-    .fm-volume .fm-btn { padding: 3px 5px; display: flex; align-items: center; }
-    .fm-volume svg { width: 15px; height: 15px; fill: currentColor; display: block; }
+    .fm-bar { height: 100%; width: 0%; background: #fff; }
+    .fm-volume { display: flex; align-items: center; gap: 4px; }
+    .fm-volume .fm-btn { padding: 4px; }
+    .fm-volume .fm-btn svg { width: 18px; height: 18px; }
     .fm-volume input[type='range'] {
-      -webkit-appearance: none; appearance: none; width: 80px; height: 4px; border-radius: 4px;
-      background: linear-gradient(to right, #3b82f6 var(--fm-fill, 100%), #334155 var(--fm-fill, 100%));
+      -webkit-appearance: none; appearance: none; width: 80px; height: 3px; border-radius: 3px;
+      background: linear-gradient(to right, #fff var(--fm-fill, 100%), rgba(255, 255, 255, 0.25) var(--fm-fill, 100%));
       cursor: pointer; outline: none;
     }
     .fm-volume input[type='range']::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 0;
+      -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 0;
     }
-    .fm-music .fm-volume { margin-top: 6px; }
+    .fm-volume input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 0; }
+    .fm-music .fm-volume { margin-top: 4px; }
     .fm-music .fm-volume input[type='range'] { flex: 1; width: auto; }
-    .fm-music-controls { display: flex; justify-content: space-between; gap: 4px; }
-    .fm-music-controls .fm-btn { flex: 1; font-size: 12px; padding: 5px 0; display: flex; align-items: center; justify-content: center; }
-    .fm-music-controls .fm-btn svg { width: 16px; height: 16px; fill: currentColor; display: block; }
-    .fm-btn.fm-toggle { color: #64748b; }
-    .fm-btn.fm-toggle.fm-on { background: rgba(59, 130, 246, 0.28); border-color: #3b82f6; color: #93c5fd; }
+    .fm-music-controls { display: flex; justify-content: center; align-items: center; gap: 18px; }
+    .fm-music-controls .fm-btn svg { width: 20px; height: 20px; }
+    .fm-music-controls .fm-btn.fm-primary { width: 40px; height: 40px; }
+    /* Aleatório/repetir: cinza desligado, branco com pontinho quando ligado. */
+    .fm-btn.fm-toggle { color: #737373; position: relative; }
+    .fm-btn.fm-toggle.fm-on { color: #fff; opacity: 1; }
+    .fm-btn.fm-toggle.fm-on::after {
+      content: ''; position: absolute; left: 50%; bottom: 0; width: 4px; height: 4px; margin-left: -2px;
+      border-radius: 50%; background: #fff;
+    }
   `;
 
   function el(doc, tag, className, text) {
@@ -708,16 +722,14 @@
       video.playbackRate = SPEEDS[(index + 1) % SPEEDS.length];
     });
     const volume = buildVolumeControl(doc, () => volumeTarget(video));
-    const back = makeButton(doc, '⏪', 'Voltar 10 segundos (←)', () => seekBy(video, -10));
-    back.append(el(doc, 'span', 'fm-lbl', '10s'));
+    speedBtn.classList.add('fm-speed');
+    const back = makeButton(doc, '', 'Voltar 10 segundos (←)', () => seekBy(video, -10));
+    setIcon(doc, back, 'rewind');
     const fwd = makeButton(doc, '', 'Avançar 10 segundos (→)', () => seekBy(video, 10));
-    fwd.append(el(doc, 'span', 'fm-lbl', '10s'), doc.createTextNode(' ⏩'));
-    const playIcon = el(doc, 'span', 'fm-ico');
-    const playLabel = el(doc, 'span', 'fm-lbl');
-    playBtn.append(playIcon, playLabel);
+    setIcon(doc, fwd, 'forward');
     bottom.append(
-      back,
       playBtn,
+      back,
       fwd,
       speedBtn,
       volume.node
@@ -767,7 +779,7 @@
       if (captions.textContent !== text) captions.textContent = text;
     }, 200);
 
-    doc.body.append(stage, captions, timeline, bottom);
+    doc.body.append(stage, el(doc, 'div', 'fm-shade'), captions, timeline, bottom);
 
     // Controles visíveis enquanto o mouse mexe (ou com o vídeo pausado).
     let idleTimer = null;
@@ -791,8 +803,8 @@
     const refresh = () => {
       doc.title = cleanTitle(document.title);
       if (video.paused) doc.body.classList.add('fm-active');
-      playIcon.textContent = video.paused ? '▶' : '⏸';
-      playLabel.textContent = video.paused ? 'Play' : 'Pausar';
+      setIcon(doc, playBtn, video.paused ? 'play' : 'pause');
+      playBtn.title = video.paused ? 'Play (espaço)' : 'Pausar (espaço)';
       speedBtn.textContent = `${video.playbackRate}x`;
       volume.refresh();
       onTime();
@@ -921,6 +933,12 @@
   }
 
   const ICON_PATHS = {
+    play: 'M8 5v14l11-7z',
+    pause: 'M6 19h4V5H6v14zm8-14v14h4V5h-4z',
+    rewind: 'M11 18V6l-8.5 6 8.5 6zm.5-6 8.5 6V6l-8.5 6z',
+    forward: 'M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z',
+    previous: 'M6 6h2v12H6zm3.5 6 8.5 6V6z',
+    next: 'M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z',
     shuffle:
       'M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z',
     repeat: 'M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z',
@@ -1101,7 +1119,11 @@
     main.append(cover, meta);
 
     const controls = el(doc, 'div', 'fm-music-controls');
-    const playBtn = makeButton(doc, '⏯', 'Play/Pausar', () => {
+    const prevBtn = makeButton(doc, '', 'Anterior', () => siteAction('prev'));
+    setIcon(doc, prevBtn, 'previous');
+    const nextBtn = makeButton(doc, '', 'Próxima', () => siteAction('next'));
+    setIcon(doc, nextBtn, 'next');
+    const playBtn = makeButton(doc, '', 'Play/Pausar', () => {
       if (!siteAction('play')) {
         const v = findMainVideo();
         if (v) v.paused ? v.play() : v.pause();
@@ -1128,9 +1150,9 @@
 
     controls.append(
       shuffleBtn,
-      makeButton(doc, '⏮', 'Anterior', () => siteAction('prev')),
+      prevBtn,
       playBtn,
-      makeButton(doc, '⏭', 'Próxima', () => siteAction('next')),
+      nextBtn,
       repeatBtn
     );
 
@@ -1162,7 +1184,7 @@
       const src = session?.cover || cfg.cover(root);
       if (src && cover.src !== src) cover.src = src;
       cover.style.visibility = src ? 'visible' : 'hidden';
-      playBtn.textContent = cfg.isPlaying() ? '⏸' : '▶';
+      setIcon(doc, playBtn, cfg.isPlaying() ? 'pause' : 'play');
       const p = cfg.progress();
       const pct = p && p.total > 0 ? Math.min(100, (p.current / p.total) * 100) : 0;
       if (!seeking) bar.style.width = `${pct}%`;
