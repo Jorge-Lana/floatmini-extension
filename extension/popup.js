@@ -4,6 +4,13 @@ import { sendToTab } from './tab-bridge.js';
 const $ = (id) => document.getElementById(id);
 const statusEl = $('status');
 
+// Versão no cabeçalho (vem do manifest).
+try {
+  $('version').textContent = `v${chrome.runtime.getManifest().version}`;
+} catch {
+  /* fora da extensão (prévia) */
+}
+
 const STATUS_TEXT = {
   needs_click: 'Clique no botão azul que apareceu na página para abrir a janela.',
   no_media: 'Nenhum vídeo encontrado nesta aba.',
