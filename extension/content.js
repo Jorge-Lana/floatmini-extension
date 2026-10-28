@@ -259,29 +259,62 @@
   const CAPTION_HINT =
     '[class*="subtitle" i], [class*="caption" i], [class*="legenda" i], [class*="timedtext" i], [class*="texttrack" i], [id*="subtitle" i], [id*="caption" i], [id*="legenda" i]';
 
-  function readNearbyCaptions(anchor) {
+  // Texto só para leitor de tela (1px, recortado): não é legenda visível.
+  function isScreenReaderOnly(node) {
+    const rect = node.getBoundingClientRect();
+    if ((rect.width > 0 && rect.width <= 2) || (rect.height > 0 && rect.height <= 2)) return true;
+    const style = getComputedStyle(node);
+    if (style.opacity !== '' && Number(style.opacity) === 0) return true;
+    return /rect\(0|1px/.test(style.clip || '') || /inset\(50%/.test(style.clipPath || '');
+  }
+
+  // Cada janela tem seu leitor: o texto que já estava na tela ao abrir e
+  // nunca muda (título, "Subtítulo:", classificação etária...) não é legenda.
+  // Só vale o elemento que aparece depois ou que muda de texto.
+  function createNearbyCaptionReader() {
+    const seen = new WeakMap(); // nó -> { text, live }
+    let first = true;
+    return (anchor) => {
+      const found = readNearbyCandidates(anchor);
+      const live = found.filter(({ node, text }) => {
+        const info = seen.get(node);
+        if (!info) {
+          seen.set(node, { text, live: !first });
+          return !first;
+        }
+        if (info.text !== text) {
+          info.text = text;
+          info.live = true;
+        }
+        return info.live;
+      });
+      first = false;
+      const lines = [];
+      for (const { node, text } of live) {
+        if (live.some((f) => f.node !== node && f.node.contains(node))) continue;
+        if (!lines.includes(text)) lines.push(text);
+      }
+      return lines.join('\n');
+    };
+  }
+
+  function readNearbyCandidates(anchor) {
     let root = anchor?.nodeType === 1 ? anchor : anchor?.parentElement;
     for (let i = 0; i < 5 && root?.parentElement && root.parentElement !== document.body; i++) root = root.parentElement;
-    if (!root) return '';
+    if (!root) return [];
     const found = [];
     for (const node of root.querySelectorAll(CAPTION_HINT)) {
       if (node.closest('[role="menu"], [role="menuitem"], [role="listbox"], [aria-hidden="true"], button, select')) continue;
       if (node.querySelector('button, input, select, [role="button"]')) continue;
-      if (!isVisible(node)) continue;
+      if (!isVisible(node) || isScreenReaderOnly(node)) continue;
       const text = nodeText(node);
       if (!text || text.length > 300) continue;
       found.push({ node, text });
     }
-    // Fica com os elementos mais externos (o texto dos internos já está neles).
-    const lines = [];
-    for (const { node, text } of found) {
-      if (found.some((f) => f.node !== node && f.node.contains(node))) continue;
-      if (!lines.includes(text)) lines.push(text);
-    }
-    return lines.join('\n');
+    return found;
   }
 
-  function readSiteCaptions(video, anchor) {
+  function readSiteCaptions(video, anchor, readNearby) {
     for (const sel of CAPTION_SELECTORS) {
       const lines = [];
       for (const node of document.querySelectorAll(sel)) {
@@ -292,7 +325,7 @@
     }
     // Em feeds (TikTok, Reels) o texto do post fica perto do vídeo e
     // pareceria legenda: lá só vale a faixa de legenda.
-    return readTrackCaptions(video) || (isFeedPage() ? '' : readNearbyCaptions(anchor));
+    return readTrackCaptions(video) || (isFeedPage() ? '' : readNearby(anchor));
   }
 
   function cleanTitle(title) {
@@ -728,8 +761,9 @@
     const onTime = () => renderTime(video.currentTime);
 
     const captions = el(doc, 'div', 'fm-captions');
+    const readNearby = createNearbyCaptionReader();
     const captionTimer = setInterval(() => {
-      const text = readSiteCaptions(video, placeholder || originalParent);
+      const text = readSiteCaptions(video, placeholder || originalParent, readNearby);
       if (captions.textContent !== text) captions.textContent = text;
     }, 200);
 
