@@ -735,7 +735,9 @@ test('vídeo comum: rolar na janela não troca de vídeo e ↑ ↓ continuam no 
 test('legendas: site desconhecido (ex.: Globoplay) com classe de legenda perto do player', async () => {
   const html = `<div class="player"><div class="media"><video></video></div>
     <div class="settings-menu" role="menu"><div class="subtitle-option">Legendas: Português</div></div>
-    <div class="player-subtitles"><span class="subtitle-line">Bom dia, Brasil!</span></div>
+    <div class="title-subtitle">Subtítulo: Origem</div>
+    <div class="caption-rating">Classificação etária: 16 anos</div>
+    <div class="player-subtitles"><span class="subtitle-line">Primeira fala</span></div>
     <div class="controls"><button class="caption-toggle">CC</button></div></div>`;
   const page = loadPage({ url: 'https://globoplay.globo.com/v/123/', html, active: true });
   fakeMedia(page.document.querySelector('video'), { duration: 3000 });
@@ -743,8 +745,16 @@ test('legendas: site desconhecido (ex.: Globoplay) com classe de legenda perto d
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
   await new Promise((r) => setTimeout(r, 300));
   const captions = docPip.window.document.querySelector('.fm-captions');
+  // Texto parado desde que a janela abriu (título, classificação) não entra.
+  assert.equal(captions.textContent, '');
+  page.document.querySelector('.subtitle-line').textContent = 'Bom dia, Brasil!';
+  await new Promise((r) => setTimeout(r, 300));
   assert.equal(captions.textContent, 'Bom dia, Brasil!');
-  page.document.querySelector('.subtitle-line').textContent = '';
+  // Fala nova num elemento novo também entra.
+  page.document.querySelector('.player-subtitles').innerHTML = '<span class="subtitle-line">Tudo bem?</span>';
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(captions.textContent, 'Tudo bem?');
+  page.document.querySelector('.player-subtitles').innerHTML = '';
   await new Promise((r) => setTimeout(r, 300));
   assert.equal(captions.textContent, '');
 });
