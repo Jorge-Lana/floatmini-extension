@@ -786,3 +786,39 @@ test('fechar a janela flutuante libera o volume do site', async () => {
   docPip.window.close();
   assert.deepEqual(asked.at(-1), { release: true });
 });
+
+test('YouTube Music: na troca de faixa a barra segue o <video> que está tocando', async () => {
+  const html = YTM_MINIPLAYER + '<video class="html5-main-video" id="old"></video><video id="new"></video>';
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html, active: true });
+  // Música anterior terminou (parada no fim); a nova toca no outro <video>.
+  fakeMedia(page.document.getElementById('old'), { duration: 200, currentTime: 200, paused: true });
+  fakeMedia(page.document.getElementById('new'), { duration: 100, currentTime: 10 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  assert.equal(docPip.window.document.querySelector('.fm-bar').style.width, '10%');
+});
+
+test('feed (TikTok/Reels/Shorts): só setas na lateral e volume; clique pausa', async () => {
+  const html = '<div id="feed"><div class="item"><video id="v1"></video></div></div>';
+  const page = loadPage({ url: 'https://www.instagram.com/reels/abc/', html, active: true });
+  const media = fakeMedia(page.document.getElementById('v1'), { duration: 20 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  assert.ok(pipDoc.body.classList.contains('fm-feed'));
+  const nav = [...pipDoc.querySelectorAll('.fm-feed-nav .fm-btn')].map((b) => b.dataset.icon);
+  assert.deepEqual(nav, ['up', 'down']);
+  assert.ok(pipDoc.querySelector('.fm-overlay-bottom .fm-volume'), 'volume continua no canto');
+  const stage = pipDoc.querySelector('.fm-stage');
+  stage.dispatchEvent(new docPip.window.MouseEvent('pointerdown', { clientX: 50, clientY: 50, bubbles: true }));
+  stage.dispatchEvent(new docPip.window.MouseEvent('pointerup', { clientX: 51, clientY: 50, bubbles: true }));
+  assert.equal(media.paused, true, 'clique no vídeo pausa');
+});
+
+test('vídeo comum não entra no modo feed', async () => {
+  const page = loadPage({ url: 'https://www.youtube.com/watch?v=a', html: YT_HTML, active: true });
+  fakeMedia(page.document.querySelector('video'));
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  assert.equal(docPip.window.document.body.classList.contains('fm-feed'), false);
+});
