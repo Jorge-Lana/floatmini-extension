@@ -45,7 +45,7 @@ Requer Firefox 151 ou mais novo (desktop).
 - Photos, Music & Videos
 - Tabs
 
-**Tags** (opcional): `youtube`, `youtube music`, `picture in picture`, `always on top`, `floating window`
+**Tags**: `picture in picture`, `always on top`, `floating window`, `youtube`, `music`, `video`, `subtitles`
 
 **Support email:** seu e-mail
 **Support website:** `https://github.com/Jorge-Lana/floatmini-extension/issues`
