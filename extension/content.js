@@ -363,9 +363,30 @@
     return videos.sort((a, b) => score(b) - score(a))[0];
   }
 
+  // O YouTube Music deixa um segundo <video> pré-carregando a próxima música.
+  // Ao trocar de faixa, o que toca pode ser o outro: vale o que está tocando.
+  function findYtMusicMedia() {
+    const videos = deepAll('video');
+    if (!videos.length) return null;
+    const score = (v) => (v.paused ? 0 : 4) + (v.duration > 0 ? 2 : 0) + (v.classList.contains('html5-main-video') ? 1 : 0);
+    return videos.sort((a, b) => score(b) - score(a))[0];
+  }
+
+  // Tempo mostrado pelo próprio YouTube Music ("0:47 / 3:12").
+  function ytMusicClock() {
+    const root = findYtMusicBar();
+    const text = (root && deep$('.ytMusicMiniPlayerTimeInfo, .time-info', root)?.textContent) || '';
+    const m = text.match(/(\d+(?::\d+)+)\s*\/\s*(\d+(?::\d+)+)/);
+    if (!m) return null;
+    const current = parseClock(m[1]);
+    const total = parseClock(m[2]);
+    return total > 0 ? { current, total } : null;
+  }
+
   function findMainVideo() {
     if (isFeedPage()) return findFeedVideo();
-    if (SITE === 'youtube' || SITE === 'youtube-music') {
+    if (SITE === 'youtube-music') return findYtMusicMedia();
+    if (SITE === 'youtube') {
       const ytVideo = $('#movie_player video.html5-main-video') || $('video.html5-main-video');
       if (ytVideo) return ytVideo;
     }
@@ -394,7 +415,8 @@
       },
       progress: () => {
         const v = findMainVideo();
-        return v ? { current: v.currentTime, total: v.duration } : null;
+        if (v && !v.paused && v.duration > 0) return { current: v.currentTime, total: v.duration };
+        return ytMusicClock() || (v ? { current: v.currentTime, total: v.duration } : null);
       },
       seek: (fraction) => {
         const v = findMainVideo();
@@ -571,6 +593,23 @@
       .fm-overlay-bottom .fm-volume input[type='range'] { display: none; }
     }
     body.fm-video:not(.fm-active) { cursor: none; }
+    /* Feed: setas na lateral, volume no canto; sem os outros controles. */
+    .fm-feed-nav {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      display: none; flex-direction: column; gap: 10px;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+    }
+    body.fm-feed .fm-feed-nav { display: flex; }
+    body.fm-feed.fm-active .fm-feed-nav { opacity: 1; pointer-events: auto; }
+    .fm-feed-nav .fm-btn { width: 40px; height: 40px; background: rgba(0, 0, 0, 0.45); opacity: 1; }
+    .fm-feed-nav .fm-btn:hover { background: rgba(0, 0, 0, 0.7); }
+    .fm-feed-nav .fm-btn svg { width: 26px; height: 26px; }
+    body.fm-feed .fm-timeline,
+    body.fm-feed .fm-overlay-bottom > .fm-btn { display: none; }
+    body.fm-feed .fm-overlay-bottom { justify-content: flex-end; }
+    body.fm-feed .fm-overlay-bottom .fm-volume input[type='range'] { display: block; width: 70px; }
+    body.fm-feed .fm-shade { height: 70px; }
+    body.fm-feed.fm-active .fm-captions { bottom: 7%; }
 
     /* Música (YouTube Music / Spotify) */
     body.fm-music { display: flex; flex-direction: column; padding: 12px; gap: 6px; }
@@ -779,7 +818,15 @@
       if (captions.textContent !== text) captions.textContent = text;
     }, 200);
 
-    doc.body.append(stage, el(doc, 'div', 'fm-shade'), captions, timeline, bottom);
+    // Feed (Shorts, TikTok, Reels): só anterior/próximo na lateral.
+    const feedNav = el(doc, 'div', 'fm-feed-nav');
+    const upBtn = makeButton(doc, '', 'Vídeo anterior (↑)', () => switchFeed(-1));
+    setIcon(doc, upBtn, 'up');
+    const downBtn = makeButton(doc, '', 'Próximo vídeo (↓)', () => switchFeed(1));
+    setIcon(doc, downBtn, 'down');
+    feedNav.append(upBtn, downBtn);
+
+    doc.body.append(stage, el(doc, 'div', 'fm-shade'), captions, timeline, bottom, feedNav);
 
     // Controles visíveis enquanto o mouse mexe (ou com o vídeo pausado).
     let idleTimer = null;
@@ -788,7 +835,7 @@
       doc.body.classList.add('fm-active');
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
-        const busy = bottom.matches(':hover') || timeline.matches(':hover') || scrubbing;
+        const busy = bottom.matches(':hover') || timeline.matches(':hover') || feedNav.matches(':hover') || scrubbing;
         if (!video.paused && !busy && !bottom.contains(doc.activeElement)) {
           doc.body.classList.remove('fm-active');
         }
@@ -806,6 +853,7 @@
       setIcon(doc, playBtn, video.paused ? 'play' : 'pause');
       playBtn.title = video.paused ? 'Play (espaço)' : 'Pausar (espaço)';
       speedBtn.textContent = `${video.playbackRate}x`;
+      doc.body.classList.toggle('fm-feed', isFeedPage());
       volume.refresh();
       onTime();
     };
@@ -887,7 +935,7 @@
 
     // No feed (Shorts, TikTok, Reels) passa de vídeo rolando ou arrastando
     // na janela, como no celular. Fora dos controles.
-    const onControls = (target) => target instanceof pipWindow.Element && !!target.closest('.fm-overlay-bottom, .fm-timeline');
+    const onControls = (target) => target instanceof pipWindow.Element && !!target.closest('.fm-overlay-bottom, .fm-timeline, .fm-feed-nav');
     let wheelSum = 0;
     let wheelLock = 0;
     doc.addEventListener(
@@ -916,6 +964,7 @@
       const dy = e.clientY - swipe.y;
       swipe = null;
       if (Math.abs(dy) >= 80 && Math.abs(dy) > Math.abs(dx) * 1.5) switchFeed(dy < 0 ? 1 : -1);
+      else if (Math.abs(dx) < 6 && Math.abs(dy) < 6) video.paused ? video.play() : video.pause();
     });
 
     if (wasPlaying && video.paused) video.play().catch(() => {});
@@ -938,6 +987,8 @@
     rewind: 'M11 18V6l-8.5 6 8.5 6zm.5-6 8.5 6V6l-8.5 6z',
     forward: 'M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z',
     previous: 'M6 6h2v12H6zm3.5 6 8.5 6V6z',
+    up: 'M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z',
+    down: 'M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z',
     next: 'M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z',
     shuffle:
       'M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z',
