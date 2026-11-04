@@ -22,6 +22,13 @@ Na imagem, o que é novo está com contorno amarelo tracejado. O "Auto-avançar"
 4. **Título do episódio** — nome do episódio aparece discreto em cima ao mexer o mouse.
 5. **Avançar/voltar por site** — conferir em cada streaming (Max, Globoplay, Disney+, Prime) se mudar o tempo direto funciona ou se precisa da API do player, como na Netflix.
 
+## Extensão (decidido)
+
+1. **Atalho em qualquer site** — atalho global (ex.: Alt+Shift+P) que abre a janela na Netflix, Globoplay ou qualquer site, sem permissão nova.
+2. **Inglês e espanhol** — menu, janela flutuante e páginas das lojas traduzidos (`_locales`).
+3. **Lembrar tamanho e lugar da janela** — separado para vídeo, música e vídeo curto.
+4. **Mini player para mais sites de música** — SoundCloud e Deezer, com capa e controles como no YouTube Music.
+
 ## Projeto (decidido)
 
 1. **Pedir avaliação** — depois de algumas vezes usando a janela flutuante, aparece no menu um "Gostou? Avalie na loja", discreto e uma vez só (link da loja certa: Chrome ou Firefox).
