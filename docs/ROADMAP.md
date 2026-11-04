@@ -21,3 +21,7 @@ Na imagem, o que é novo está com contorno amarelo tracejado. O "Auto-avançar"
 3. **Tamanho da legenda** — A− / A+ na janela, lembrado por site.
 4. **Título do episódio** — nome do episódio aparece discreto em cima ao mexer o mouse.
 5. **Avançar/voltar por site** — conferir em cada streaming (Max, Globoplay, Disney+, Prime) se mudar o tempo direto funciona ou se precisa da API do player, como na Netflix.
+
+## Correções de bugs
+
+Os bugs relatados ficam em [`BUGS.md`](BUGS.md) e as correções no PR "Correções de bugs (acumulado)". Entram todas na 3.0.
