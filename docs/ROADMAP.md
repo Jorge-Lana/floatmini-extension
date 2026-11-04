@@ -28,6 +28,7 @@ Na imagem, o que é novo está com contorno amarelo tracejado. O "Auto-avançar"
 2. **Inglês e espanhol** — menu, janela flutuante e páginas das lojas traduzidos (`_locales`).
 3. **Lembrar tamanho e lugar da janela** — separado para vídeo, música e vídeo curto.
 4. **Mini player para mais sites de música** — SoundCloud e Deezer, com capa e controles como no YouTube Music.
+5. **"A seguir" no fim da música** — nos últimos segundos da faixa, aparece no mini player uma linha discreta com a próxima música da fila.
 
 ## Projeto (decidido)
 
