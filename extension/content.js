@@ -372,9 +372,15 @@
     return videos.sort((a, b) => score(b) - score(a))[0];
   }
 
-  // Tempo mostrado pelo próprio YouTube Music ("0:47 / 3:12").
+  // Tempo mostrado pelo próprio YouTube Music ("0:47 / 3:12" ou a barra de
+  // progresso do site). É a fonte certa: com a reprodução sem pausa entre
+  // faixas, o <video> continua contando o tempo da música anterior.
   function ytMusicClock() {
     const root = findYtMusicBar();
+    const slider = deep$('#progress-bar');
+    const now = Number(slider?.getAttribute('aria-valuenow'));
+    const max = Number(slider?.getAttribute('aria-valuemax'));
+    if (Number.isFinite(now) && max > 0) return { current: now, total: max };
     const text = (root && deep$('.ytMusicMiniPlayerTimeInfo, .time-info', root)?.textContent) || '';
     const m = text.match(/(\d+(?::\d+)+)\s*\/\s*(\d+(?::\d+)+)/);
     if (!m) return null;
@@ -414,13 +420,23 @@
         return !!v && !v.paused;
       },
       progress: () => {
+        const clock = ytMusicClock();
+        if (clock) return clock;
         const v = findMainVideo();
-        if (v && !v.paused && v.duration > 0) return { current: v.currentTime, total: v.duration };
-        return ytMusicClock() || (v ? { current: v.currentTime, total: v.duration } : null);
+        return v ? { current: v.currentTime, total: v.duration } : null;
       },
       seek: (fraction) => {
         const v = findMainVideo();
-        if (v && v.duration > 0) v.currentTime = fraction * v.duration;
+        if (!v) return;
+        const clock = ytMusicClock();
+        if (clock) {
+          // O <video> pode ter as músicas anteriores no começo: desloca a
+          // partir do início da música atual.
+          const start = v.currentTime - clock.current;
+          v.currentTime = Math.max(0, start + fraction * clock.total);
+        } else if (v.duration > 0) {
+          v.currentTime = fraction * v.duration;
+        }
       },
       buttons: {
         // Layout novo (ytmusic-miniplayer) primeiro, depois o antigo.

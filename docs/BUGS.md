@@ -4,7 +4,7 @@ Lista dos bugs relatados. As correções entram no PR "Correções de bugs" e sa
 
 | # | Status | Onde | Bug | Versão |
 |---|--------|------|-----|--------|
-| 1 | Corrigido na 2.0.1 — confirmar | YouTube Music | Ao terminar uma música, a barra de progresso não reinicia e continua como se fosse a anterior. ![print](img/bugs/ytmusic-barra-2026-11-04.png) | 2.0.0 |
+| 1 | Corrigido neste PR | YouTube Music | Ao terminar uma música, a barra de progresso não reinicia e continua como se fosse a anterior. Causa: com reprodução sem pausa entre faixas, o `<video>` continua contando o tempo da música anterior. Agora a barra usa o tempo do próprio site, e o clique na barra conta a partir do início da música atual. ![print](img/bugs/ytmusic-barra-2026-11-04.png) | 2.0.1 (a correção da 2.0.1 não bastou) |
 
 ## Como relatar
 

@@ -597,7 +597,7 @@ test('ponte de volume: usa a API do player e desfaz mudanças do site', async ()
 });
 
 test('YouTube Music: clicar na barra de progresso muda o tempo da música', async () => {
-  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html: YTM_MINIPLAYER + '<video></video>', active: true });
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html: YTM_MINIPLAYER.replace('0:47 / 3:12', '') + '<video></video>', active: true });
   const media = fakeMedia(page.document.querySelector('video'), { duration: 200, currentTime: 10 });
   const docPip = fakeDocumentPip(page.window);
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
@@ -788,7 +788,7 @@ test('fechar a janela flutuante libera o volume do site', async () => {
 });
 
 test('YouTube Music: na troca de faixa a barra segue o <video> que está tocando', async () => {
-  const html = YTM_MINIPLAYER + '<video class="html5-main-video" id="old"></video><video id="new"></video>';
+  const html = YTM_MINIPLAYER.replace('0:47 / 3:12', '') + '<video class="html5-main-video" id="old"></video><video id="new"></video>';
   const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html, active: true });
   // Música anterior terminou (parada no fim); a nova toca no outro <video>.
   fakeMedia(page.document.getElementById('old'), { duration: 200, currentTime: 200, paused: true });
@@ -821,4 +821,18 @@ test('vídeo comum não entra no modo feed', async () => {
   const docPip = fakeDocumentPip(page.window);
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
   assert.equal(docPip.window.document.body.classList.contains('fm-feed'), false);
+});
+
+test('YouTube Music: sem pausa entre faixas, a barra usa o tempo do site, não o do <video>', async () => {
+  const html = YTM_MINIPLAYER.replace('0:47 / 3:12', '0:12 / 2:00') + '<video class="html5-main-video"></video>';
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html, active: true });
+  // O <video> segue contando desde a música anterior (250 s de 400 s).
+  const media = fakeMedia(page.document.querySelector('video'), { duration: 400, currentTime: 250 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  assert.equal(pipDoc.querySelector('.fm-bar').style.width, '10%'); // 12 s de 120 s
+  pipDoc.querySelector('.fm-progress').getBoundingClientRect = () => ({ left: 0, width: 200, top: 0, height: 3 });
+  pipDoc.querySelector('.fm-seek').dispatchEvent(new docPip.window.MouseEvent('pointerdown', { clientX: 100, bubbles: true }));
+  assert.equal(media.currentTime, 298); // início da música (238 s) + metade de 120 s
 });
