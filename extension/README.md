@@ -35,7 +35,8 @@ Requer Chrome, Edge, Brave ou Opera 116+, ou **Firefox 151+** (desktop).
 | YouTube, Netflix, Prime Video, Disney+ e outros sites com vídeo | Só o vídeo, ocupando a janela inteira, com as legendas do site. Os controles aparecem ao mexer o mouse e somem sozinhos depois de 2 segundos: linha do tempo (clique ou arraste), ⏪ 10s, Play/Pausar, 10s ⏩, velocidade (1x a 2x) e volume (mudo + controle deslizante). Em sites de streaming, abra pelo botão da extensão ou pelo menu do botão direito. Teclas: espaço, ← →, ↑ ↓ (volume) e M (mudo). |
 | YouTube Music | Mini player ("tela menor") com capa, faixa, artista, barra de progresso, volume, aleatório, anterior, play, próxima e repetir. Teclas: ↑ ↓ (volume) e M (mudo). |
 | Spotify Web | Mesmo mini player, controlando os botões do próprio Spotify (inclusive a barra de progresso). |
-| YouTube Shorts, TikTok e Reels do Instagram | Janela em pé (300×533) com os mesmos controles do vídeo. Para ir ao vídeo anterior/próximo do feed, role ou arraste para cima/baixo na janela (ou use ↑ ↓ / Page Up / Page Down). |
+| YouTube Shorts, TikTok e Reels do Instagram | Janela em pé (300×533) só com ▲ ▼ na lateral, volume no canto e uma linha fina de progresso. Também passa rolando ou arrastando na janela (↑ ↓ / Page Up / Page Down); clique no vídeo pausa. No menu: "Passar sozinho quando o vídeo acaba" e "Ativar Alt+P no TikTok e Instagram" (pede a permissão só desses dois sites). |
+| Streaming (Netflix, Prime Video, Disney+, Globoplay...) | Quando o site mostra "Pular abertura" ou "Próximo episódio", o botão aparece também na janela. Se o site cria outro vídeo para o próximo episódio, a janela passa a mostrar o novo. |
 
 Os botões de aleatório e repetir acionam os do próprio site e mostram o estado atual: ficam **azuis** quando ligados, e o ícone de repetir muda para 🔂 (com "1") quando está repetindo só a música atual. A ordem é desligado → repetir todas → repetir só esta.
 
@@ -44,7 +45,7 @@ Os botões de aleatório e repetir acionam os do próprio site e mostram o estad
 ## ⚡ Atalhos
 
 - **`Alt + P`**: abre/fecha a janela flutuante (funciona com o foco na página).
-- Um atalho global pode ser configurado em `chrome://extensions/shortcuts` ("Abrir/fechar a janela flutuante"). Ele pede um clique na página antes de abrir, pelo motivo explicado acima.
+- **`Alt + Shift + P`**: atalho global, em qualquer site (Netflix, Globoplay...). Nos sites onde a extensão ainda não estava ativa, ele mostra o botão "Clique para flutuar" e um clique abre a janela, pelo motivo explicado acima. Dá para trocar em `chrome://extensions/shortcuts`.
 
 ---
 
@@ -55,7 +56,8 @@ Os botões de aleatório e repetir acionam os do próprio site e mostram o estad
 | Acesso a youtube.com, music.youtube.com e open.spotify.com | Mostrar o botão Flutuar e o atalho Alt+P nesses sites. |
 | `activeTab` + `scripting` | Em qualquer outro site, carregar a extensão só na aba atual e só quando você usa o popup, o menu ou um atalho. |
 | `contextMenus` | Item "Abrir na janela flutuante" no botão direito. |
-| `storage` | Guardar suas preferências (tamanho da janela). |
+| `storage` | Guardar suas preferências (tamanho da janela, auto-avançar) e quantas vezes a janela abriu (para o pedido de avaliação, uma vez só). |
+| tiktok.com e instagram.com (**opcional**) | Só se você ativar no menu: Alt+P e botão Flutuar nesses sites. Dá para desativar no mesmo lugar. |
 
 ## Limitações conhecidas
 

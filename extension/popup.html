@@ -19,7 +19,7 @@
   <main class="content">
     <button id="btn-float" class="btn-primary" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg><span>Flutuar mídia desta aba</span></button>
     <p class="hint">
-      Atalho na página do vídeo: <kbd>Alt</kbd> <kbd>P</kbd>, ou o ícone de janela flutuante na barra do player.
+      Atalho: <kbd>Alt</kbd> <kbd>P</kbd> no YouTube e no Spotify, ou <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>P</kbd> em qualquer site.
     </p>
     <p id="status" class="status" role="status" hidden></p>
 
@@ -39,6 +39,16 @@
       <button class="size-btn" type="button" data-size="640x360">Grande</button>
     </div>
 
+    <div class="section-title">Shorts, TikTok e Reels</div>
+    <div class="feed-box">
+      <label class="switch-row" for="feed-auto">
+        <span>Passar sozinho quando o vídeo acaba</span>
+        <input type="checkbox" id="feed-auto" role="switch">
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+      <button id="feed-perm" class="link-btn" type="button">Ativar Alt+P no TikTok e Instagram</button>
+    </div>
+
     <form id="url-form" class="quick-url-box">
       <label for="url-input">Abrir um link numa janela compacta</label>
       <div class="input-row">
@@ -48,6 +58,12 @@
       </div>
     </form>
   </main>
+
+  <div id="rate" class="rate" hidden>
+    <span>Gostou do FloatMini?</span>
+    <a id="rate-link" href="#" target="_blank" rel="noopener noreferrer">Avalie na loja ★</a>
+    <button id="rate-close" type="button" title="Não mostrar de novo" aria-label="Fechar">×</button>
+  </div>
 
   <footer class="footer">
     <a class="footer-link" href="https://github.com/Jorge-Lana/floatmini-extension" target="_blank" rel="noopener noreferrer">Código aberto</a>

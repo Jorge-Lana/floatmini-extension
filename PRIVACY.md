@@ -11,7 +11,7 @@ _Última atualização: 15 de outubro de 2026_
 
 ## O que a extensão guarda
 
-- **Sua preferência de tamanho da janela**, salva no armazenamento local do navegador (`chrome.storage.local`). Ela nunca sai do seu computador.
+- **Suas preferências** (tamanho da janela, passar sozinho para o próximo vídeo) e **quantas vezes a janela abriu** (só para mostrar uma vez o convite de avaliação), salvas no armazenamento local do navegador (`chrome.storage.local`). Nada disso sai do seu computador.
 
 ## O que a extensão NÃO faz
 
@@ -38,7 +38,7 @@ _Last updated: October 15, 2026_
 
 **What it accesses.** On YouTube, YouTube Music and Spotify Web, the extension shows the floating-window button, reads the title, artist and artwork of what is playing and triggers the site's own player controls. This happens only in your browser, only to build the floating window. On other sites it accesses the current tab only when you use the popup, the context menu or a shortcut.
 
-**What it stores.** Only your window-size preference, in the browser's local storage (`chrome.storage.local`). It never leaves your computer.
+**What it stores.** Only your preferences (window size, auto-advance) and how many times the window was opened (only to show the rating prompt once), in the browser's local storage (`chrome.storage.local`). None of it leaves your computer.
 
 **What it does not do.** No collection of personal data, browsing history or media activity; nothing is sent to any server; no cookies, analytics, trackers or ads; no remote code.
 

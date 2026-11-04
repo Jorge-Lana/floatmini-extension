@@ -4,7 +4,7 @@
 
 Na imagem, o que é novo está com contorno amarelo tracejado.
 
-## 3.0 — em andamento
+## 3.0 — pronto (aguardando lançamento)
 
 **Correções de bugs** — lista em [`BUGS.md`](BUGS.md).
 

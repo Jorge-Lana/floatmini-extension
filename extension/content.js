@@ -23,15 +23,28 @@
   // ---------------------------------------------------------------------------
   // Preferências (popup)
   // ---------------------------------------------------------------------------
-  const settings = { pipSize: 'auto' };
+  const settings = { pipSize: 'auto', feedAutoAdvance: false };
 
-  chrome.storage.local.get(['pipSize'], (res) => {
+  chrome.storage.local.get(['pipSize', 'feedAutoAdvance'], (res) => {
     if (res?.pipSize) settings.pipSize = res.pipSize;
+    settings.feedAutoAdvance = !!res?.feedAutoAdvance;
   });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes.pipSize) settings.pipSize = changes.pipSize.newValue || 'auto';
+    if (changes.feedAutoAdvance) settings.feedAutoAdvance = !!changes.feedAutoAdvance.newValue;
   });
+
+  // Conta quantas vezes a janela abriu (o menu usa para pedir avaliação).
+  function countFloatOpen() {
+    try {
+      chrome.storage.local.get(['floatCount'], (res) => {
+        chrome.storage.local.set({ floatCount: (Number(res?.floatCount) || 0) + 1 });
+      });
+    } catch {
+      /* sem storage: ignora */
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Utilidades
@@ -626,6 +639,19 @@
     body.fm-feed .fm-overlay-bottom .fm-volume input[type='range'] { display: block; width: 70px; }
     body.fm-feed .fm-shade { height: 70px; }
     body.fm-feed.fm-active .fm-captions { bottom: 7%; }
+    .fm-feed-line { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.25); display: none; pointer-events: none; }
+    .fm-feed-line > div { height: 100%; width: 0; background: #fff; }
+    body.fm-feed .fm-feed-line { display: block; }
+    /* Streaming: botão do site espelhado (pular abertura, próximo episódio). */
+    .fm-site-action {
+      position: absolute; right: 12px; bottom: 16px; z-index: 2;
+      background: rgba(0, 0, 0, 0.6); color: #fff; border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: bottom 0.25s ease, background 0.15s ease;
+    }
+    .fm-site-action:hover { background: rgba(0, 0, 0, 0.85); border-color: #fff; }
+    .fm-site-action[hidden] { display: none; }
+    body.fm-active .fm-site-action { bottom: 84px; }
 
     /* Música (YouTube Music / Spotify) */
     body.fm-music { display: flex; flex-direction: column; padding: 12px; gap: 6px; }
@@ -697,6 +723,45 @@
     return VIDEO_AUTO_SIZE;
   }
 
+  // Streaming: botões do site de "pular abertura" e "próximo episódio".
+  // Seletores conhecidos primeiro; depois, pelo texto do botão.
+  const SITE_ACTIONS = [
+    {
+      kind: 'skip',
+      selector:
+        '[data-uia="player-skip-intro"], [data-uia="player-skip-recap"], [data-uia="player-skip-preplay"], [data-uia="player-skip-credits"], .atvwebplayersdk-skipelement-button, .skip__button, [data-testid="player-ux-skip-button"]'
+    },
+    {
+      kind: 'next',
+      selector:
+        '[data-uia="next-episode-seamless-button"], [data-uia="next-episode-seamless-button-draining"], .atvwebplayersdk-nextupcard-button, [data-testid="up-next-play-button"], [data-testid="player-ux-up-next-button"]'
+    }
+  ];
+  const SKIP_TEXT = /(pular|skip|ignorar)\s+(a\s+|o\s+)?(abertura|introdu|intro|recap|resumo|cr[ée]ditos|credits)/i;
+  const NEXT_TEXT = /(pr[óo]ximo\s+epis[óo]dio|next\s+episode|assistir\s+(o\s+)?pr[óo]ximo|pr[óo]ximo\s+ep\b)/i;
+  const ACTION_LABEL = { skip: 'Pular abertura', next: 'Próximo episódio' };
+
+  function findSiteAction() {
+    // YouTube fica de fora (não tem abertura; e "pular" lá é anúncio).
+    if (SITE !== 'other' && SITE !== 'netflix') return null;
+    for (const { kind, selector } of SITE_ACTIONS) {
+      const node = [...document.querySelectorAll(selector)].find(isVisible);
+      if (node) return { kind, node, label: shortLabel(nodeText(node), kind) };
+    }
+    for (const node of document.querySelectorAll('button, [role="button"], a')) {
+      const text = `${nodeText(node)} ${node.getAttribute('aria-label') || ''}`;
+      if (text.length > 80 || /an[úu]ncio|\bads?\b/i.test(text)) continue;
+      const kind = SKIP_TEXT.test(text) ? 'skip' : NEXT_TEXT.test(text) ? 'next' : null;
+      if (kind && isVisible(node)) return { kind, node, label: shortLabel(nodeText(node), kind) };
+    }
+    return null;
+  }
+
+  function shortLabel(text, kind) {
+    const clean = (text || '').replace(/\s+/g, ' ').trim();
+    return clean && clean.length <= 28 ? clean : ACTION_LABEL[kind];
+  }
+
   function feedButton(dir) {
     const down = dir > 0;
     const selectors =
@@ -763,9 +828,12 @@
       stage.append(v);
     };
     const unpark = (v) => {
+      let placed = true;
       if (placeholder?.isConnected) placeholder.replaceWith(v);
       else if (originalParent?.isConnected) originalParent.append(v);
+      else placed = false;
       placeholder = null;
+      return placed;
     };
     park(video);
 
@@ -825,13 +893,38 @@
       scrubbing = false;
       renderTime(video.currentTime);
     });
-    const onTime = () => renderTime(video.currentTime);
+    let switching = false; // trocando de vídeo no feed
+    let lastTime = 0;
+    let autoAdvanceAfter = 0;
+    const onTime = () => {
+      const t = video.currentTime;
+      const d = video.duration;
+      renderTime(t);
+      if (isFeedPage() && d > 0) {
+        feedLineFill.style.width = `${Math.min(100, (t / d) * 100)}%`;
+        // Auto-avançar: no fim do vídeo (ou quando ele recomeça sozinho, já
+        // que TikTok/Reels repetem o vídeo) vai para o próximo.
+        const nearEnd = t >= d - 0.3;
+        const wrapped = lastTime > d - 1.5 && t < lastTime - 1;
+        if (settings.feedAutoAdvance && (nearEnd || wrapped) && !switching && Date.now() > autoAdvanceAfter) {
+          autoAdvanceAfter = Date.now() + 3000;
+          switchFeed(1);
+        }
+      }
+      lastTime = t;
+    };
 
     const captions = el(doc, 'div', 'fm-captions');
     const readNearby = createNearbyCaptionReader();
+    let tick = 0;
     const captionTimer = setInterval(() => {
       const text = readSiteCaptions(video, placeholder || originalParent, readNearby);
       if (captions.textContent !== text) captions.textContent = text;
+      if (++tick % 3) return; // o resto, a cada ~600 ms
+      siteAction = Date.now() < siteActionPausedUntil ? null : findSiteAction();
+      siteActionBtn.hidden = !siteAction;
+      if (siteAction) siteActionBtn.textContent = `${siteAction.label} ›`;
+      followNewEpisode();
     }, 200);
 
     // Feed (Shorts, TikTok, Reels): só anterior/próximo na lateral.
@@ -842,7 +935,25 @@
     setIcon(doc, downBtn, 'down');
     feedNav.append(upBtn, downBtn);
 
-    doc.body.append(stage, el(doc, 'div', 'fm-shade'), captions, timeline, bottom, feedNav);
+    // Feed: linha fina de progresso embaixo.
+    const feedLine = el(doc, 'div', 'fm-feed-line');
+    const feedLineFill = el(doc, 'div');
+    feedLine.append(feedLineFill);
+
+    // Streaming: "Pular abertura" / "Próximo episódio" do próprio site.
+    const siteActionBtn = el(doc, 'button', 'fm-site-action');
+    siteActionBtn.type = 'button';
+    siteActionBtn.hidden = true;
+    let siteAction = null;
+    let siteActionPausedUntil = 0;
+    siteActionBtn.addEventListener('click', () => {
+      if (!siteAction?.node?.isConnected) return;
+      siteAction.node.click();
+      siteActionBtn.hidden = true;
+      siteActionPausedUntil = Date.now() + 1500;
+    });
+
+    doc.body.append(stage, el(doc, 'div', 'fm-shade'), captions, timeline, bottom, feedNav, feedLine, siteActionBtn);
 
     // Controles visíveis enquanto o mouse mexe (ou com o vídeo pausado).
     let idleTimer = null;
@@ -888,7 +999,6 @@
 
     // Feed (Shorts, TikTok, Reels): devolve o vídeo atual para a página, vai
     // para o anterior/próximo e traz o novo vídeo para a janela.
-    let switching = false;
     async function switchFeed(dir) {
       if (switching) return;
       switching = true;
@@ -907,11 +1017,18 @@
       }, 4000);
       const target = next || old;
       if (target !== old && !old.paused) old.pause();
+      adopt(target, { muted, level });
+      switching = false;
+    }
+
+    // Traz um vídeo da página para a janela, com o mesmo volume.
+    function adopt(target, { muted, level }) {
       video = target;
       park(target);
       bind(target);
       target.volume = level;
       target.muted = muted;
+      lastTime = target.currentTime;
       if (target.paused) {
         target.play().catch(() => {
           // Sem som o navegador sempre deixa tocar.
@@ -920,7 +1037,21 @@
         });
       }
       refresh();
-      switching = false;
+    }
+
+    // Streaming: o site pode criar outro <video> para o próximo episódio.
+    // Se o da janela parou e há outro tocando na página, a janela passa a
+    // mostrar o novo.
+    function followNewEpisode() {
+      if (switching || isFeedPage() || (SITE !== 'other' && SITE !== 'netflix')) return;
+      if (!video.paused && !video.ended) return;
+      const next = [...document.querySelectorAll('video')].find((v) => !v.paused && v.duration > 30);
+      if (!next) return;
+      const old = video;
+      const { muted, volume: level } = old;
+      unbind(old);
+      if (!unpark(old)) old.remove();
+      adopt(next, { muted, level });
     }
 
     doc.addEventListener('keydown', (e) => {
@@ -1346,6 +1477,7 @@
         const pipWindow = await docPip.requestWindow({ width: size.width, height: size.height });
         if (IS_MUSIC_SITE) buildMusicWidget(pipWindow);
         else buildVideoWindow(pipWindow, video);
+        countFloatOpen();
         return 'opened';
       } catch (err) {
         console.warn('[FloatMini] Document Picture-in-Picture falhou:', err);
