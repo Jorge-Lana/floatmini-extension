@@ -62,6 +62,19 @@
     }
   }
 
+  // Conta para a extensão o volume do player (o mesmo que aparece no site).
+  let lastReport = '';
+  function report() {
+    const p = player();
+    if (!p || typeof p.getVolume !== 'function') return;
+    const detail = JSON.stringify({ percent: p.getVolume(), muted: !!p.isMuted?.() });
+    if (detail === lastReport && Date.now() - lastReportAt < 2000) return;
+    lastReport = detail;
+    lastReportAt = Date.now();
+    document.dispatchEvent(new CustomEvent('floatmini:volume-state', { detail }));
+  }
+  let lastReportAt = 0;
+
   function siteChanged() {
     if (!desired) return;
     // A pessoa acabou de mexer na página (ex.: no volume do site, mesmo num
@@ -116,8 +129,14 @@
 
   // O site trocou o volume: confere na hora e também de tempos em tempos
   // (no YouTube o <video> pode estar na janela flutuante, fora desta página).
-  document.addEventListener('volumechange', siteChanged, true);
-  setInterval(siteChanged, 700);
+  document.addEventListener('volumechange', () => {
+    siteChanged();
+    report();
+  }, true);
+  setInterval(() => {
+    siteChanged();
+    report();
+  }, 700);
 
   document.addEventListener('floatmini:volume', (event) => {
     let req;
@@ -135,5 +154,6 @@
       muted: Boolean(req.muted)
     };
     apply();
+    report();
   });
 })();

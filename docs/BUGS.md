@@ -4,7 +4,8 @@ Lista dos bugs relatados. As correções entram no PR "Correções de bugs" e sa
 
 | # | Status | Onde | Bug | Versão |
 |---|--------|------|-----|--------|
-| 1 | Corrigido neste PR | YouTube Music | Ao terminar uma música, a barra de progresso não reinicia e continua como se fosse a anterior. Causa: com reprodução sem pausa entre faixas, o `<video>` continua contando o tempo da música anterior. Agora a barra usa o tempo do próprio site, e o clique na barra conta a partir do início da música atual. ![print](img/bugs/ytmusic-barra-2026-11-04.png) | 2.0.1 (a correção da 2.0.1 não bastou) |
+| 1 | Corrigido neste PR | YouTube Music | O controle de volume da janela parece não subir (fica baixo mesmo com o volume alto). Causa: a normalização de volume do YouTube deixa o `<video>` mais baixo que o volume do site, e a janela lia o `<video>`. Agora a janela segue o volume do player (o mesmo do site). ![print](img/bugs/ytmusic-volume-2026-11-04.png) | 2.0.1 |
+| 2 | Melhoria neste PR | YouTube Music | Barra de progresso passa a usar o tempo mostrado pelo site; com reprodução sem pausa entre faixas o `<video>` pode continuar contando o tempo da música anterior. | 2.0.1 |
 
 ## Como relatar
 

@@ -836,3 +836,22 @@ test('YouTube Music: sem pausa entre faixas, a barra usa o tempo do site, não o
   pipDoc.querySelector('.fm-seek').dispatchEvent(new docPip.window.MouseEvent('pointerdown', { clientX: 100, bubbles: true }));
   assert.equal(media.currentTime, 298); // início da música (238 s) + metade de 120 s
 });
+
+test('YouTube Music: volume da janela segue o player, não o <video> normalizado', async () => {
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html: YTM_MINIPLAYER + '<video></video>', active: true });
+  const media = fakeMedia(page.document.querySelector('video'));
+  media.volume = 0.35; // normalização do YouTube: o <video> fica mais baixo
+  const sent = [];
+  page.document.addEventListener('floatmini:volume', (e) => sent.push(JSON.parse(e.detail)));
+  // O player (yt-volume.js) informa o volume que aparece no site: 100%.
+  page.document.dispatchEvent(new page.window.CustomEvent('floatmini:volume-state', { detail: JSON.stringify({ percent: 100, muted: false }) }));
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const slider = docPip.window.document.querySelector('.fm-volume input[type="range"]');
+  assert.equal(slider.value, '100');
+  slider.value = '40';
+  slider.dispatchEvent(new docPip.window.Event('input'));
+  assert.deepEqual(sent.at(-1), { volume: 0.4, muted: false });
+  assert.equal(media.volume, 0.35, 'o <video> fica com o player (normalização)');
+  assert.equal(slider.value, '40');
+});

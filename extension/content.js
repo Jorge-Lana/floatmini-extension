@@ -1031,10 +1031,48 @@
     document.dispatchEvent(new CustomEvent('floatmini:volume', { detail }));
   }
 
+  // Volume do player do YouTube/YT Music (o que a pessoa vê no site). O
+  // <video> fica mais baixo por causa da normalização de volume do YouTube,
+  // então o controle da janela segue o player, não o <video>.
+  let playerVolume = null; // { volume, muted, at }
+  document.addEventListener('floatmini:volume-state', (event) => {
+    try {
+      const state = JSON.parse(event.detail);
+      if (typeof state.percent !== 'number') return;
+      playerVolume = { volume: Math.min(1, Math.max(0, state.percent / 100)), muted: !!state.muted, at: Date.now() };
+    } catch {
+      /* ignora */
+    }
+  });
+  const freshPlayerVolume = () =>
+    (SITE === 'youtube' || SITE === 'youtube-music') && playerVolume && Date.now() - playerVolume.at < 5000 ? playerVolume : null;
+
+  function sendPlayerVolume(volume, muted) {
+    playerVolume = { volume, muted, at: Date.now() };
+    document.dispatchEvent(new CustomEvent('floatmini:volume', { detail: JSON.stringify({ volume, muted }) }));
+  }
+
   // Volume: no YouTube/YT Music mexe direto no elemento de mídia; no Spotify
   // (sem elemento acessível) usa o controle de volume do próprio site.
   function volumeTarget(video) {
     const media = video || (SITE === 'spotify' ? null : findMainVideo());
+    if (media && freshPlayerVolume()) {
+      return {
+        get: () => {
+          const state = freshPlayerVolume() || { volume: media.volume, muted: media.muted };
+          return { volume: state.volume, muted: state.muted || state.volume === 0 };
+        },
+        set: (v) => {
+          const volume = Math.min(1, Math.max(0, v));
+          sendPlayerVolume(volume, volume <= 0);
+        },
+        toggleMute: () => {
+          const state = freshPlayerVolume() || { volume: media.volume, muted: media.muted };
+          if (state.muted || state.volume === 0) sendPlayerVolume(state.volume || 0.5, false);
+          else sendPlayerVolume(state.volume, true);
+        }
+      };
+    }
     if (media) {
       return {
         get: () => ({ volume: media.volume, muted: media.muted || media.volume === 0 }),
