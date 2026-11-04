@@ -1,15 +1,11 @@
 // FloatMini - service worker (Manifest V3)
 import { sendToTab } from './tab-bridge.js';
-import { syncFeedScripts } from './feed-sites.js';
+import { syncExtraScripts } from './extra-sites.js';
 
 const MENU_ID = 'floatmini-toggle';
 
-// Abas abertas pelo "abrir link numa janela compacta" que devem mostrar o
-// convite "Clique para flutuar" assim que carregarem.
-const tabsAwaitingPrompt = new Set();
-
-// TikTok/Instagram: mantém o content script de acordo com a permissão.
-const syncFeeds = () => syncFeedScripts().catch((err) => console.warn('[FloatMini] TikTok/Instagram:', err?.message || err));
+// Streamings, TikTok e Instagram: mantém o content script de acordo com a permissão.
+const syncFeeds = () => syncExtraScripts().catch((err) => console.warn('[FloatMini] sites extras:', err?.message || err));
 chrome.runtime.onStartup?.addListener(syncFeeds);
 chrome.permissions?.onAdded?.addListener(syncFeeds);
 chrome.permissions?.onRemoved?.addListener(syncFeeds);
@@ -43,39 +39,13 @@ function forward(tabId, message) {
   });
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.action !== 'OPEN_IN_COMPACT_WINDOW') return false;
-  openCompactWindow(message).then(sendResponse, (err) =>
-    sendResponse({ error: String(err?.message || err) })
-  );
-  return true; // resposta assíncrona
+// Netflix: a ponte com o player (avançar/voltar sem travar) roda no mundo
+// da página. Quando o content script foi carregado pelos sites extras, ele
+// pede a ponte aqui.
+chrome.runtime.onMessage.addListener((message, sender) => {
+  if (message?.action !== 'INJECT_PAGE_BRIDGE' || sender.tab?.id === undefined) return false;
+  chrome.scripting
+    .executeScript({ target: { tabId: sender.tab.id }, files: ['page-bridge.js'], world: 'MAIN' })
+    .catch(() => {});
+  return false;
 });
-
-async function openCompactWindow({ url, width = 520, height = 420 }) {
-  const parsed = new URL(url);
-  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-    throw new Error('Só links http(s) são aceitos.');
-  }
-  // Uma janela popup do Chrome NÃO fica sempre no topo. Ela só serve para
-  // abrir o site num tamanho compacto; o "sempre no topo" de verdade vem do
-  // Document Picture-in-Picture, que o content script abre após um clique.
-  const win = await chrome.windows.create({
-    url: parsed.href,
-    type: 'popup',
-    width: Math.round(width),
-    height: Math.round(height),
-    focused: true
-  });
-  const tabId = win.tabs?.[0]?.id;
-  if (tabId !== undefined) tabsAwaitingPrompt.add(tabId);
-  return { windowId: win.id };
-}
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status !== 'complete' || !tabsAwaitingPrompt.has(tabId)) return;
-  tabsAwaitingPrompt.delete(tabId);
-  // Só funciona onde o content script já roda (YouTube, YT Music, Spotify).
-  chrome.tabs.sendMessage(tabId, { action: 'SHOW_FLOAT_PROMPT' }).catch(() => {});
-});
-
-chrome.tabs.onRemoved.addListener((tabId) => tabsAwaitingPrompt.delete(tabId));

@@ -7,7 +7,8 @@ _Última atualização: 15 de outubro de 2026_
 ## O que a extensão acessa
 
 - **Páginas do YouTube, YouTube Music e Spotify Web**, para mostrar o botão de janela flutuante, ler o título, artista e capa da mídia que está tocando e acionar os controles do próprio player (play, próxima, aleatório, repetir, volume). Essas informações são usadas apenas na hora, dentro do seu navegador, para montar a janela flutuante.
-- **A aba atual em outros sites**, somente quando você usa o popup, o menu do botão direito ou um atalho da extensão, para encontrar o vídeo da página.
+- **A aba atual em outros sites**, somente quando você usa o menu do botão direito ou um atalho da extensão, para encontrar o vídeo da página.
+- **Streamings, TikTok e Instagram**, somente se você ativar no menu da extensão (o navegador pede essa permissão à parte), para mostrar o ícone na barra do player e o atalho Alt+P. Dá para desativar no mesmo lugar.
 
 ## O que a extensão guarda
 
@@ -36,7 +37,7 @@ _Last updated: October 15, 2026_
 
 **Summary: FloatMini does not collect, transmit or sell any of your data.**
 
-**What it accesses.** On YouTube, YouTube Music and Spotify Web, the extension shows the floating-window button, reads the title, artist and artwork of what is playing and triggers the site's own player controls. This happens only in your browser, only to build the floating window. On other sites it accesses the current tab only when you use the popup, the context menu or a shortcut.
+**What it accesses.** On YouTube, YouTube Music and Spotify Web, the extension shows the floating-window button, reads the title, artist and artwork of what is playing and triggers the site's own player controls. This happens only in your browser, only to build the floating window. On other sites it accesses the current tab only when you use the context menu or a shortcut. On streaming sites, TikTok and Instagram it runs only if you turn it on in the extension menu (a separate, optional permission).
 
 **What it stores.** Only your preferences (window size, auto-advance) and how many times the window was opened (only to show the rating prompt once), in the browser's local storage (`chrome.storage.local`). None of it leaves your computer.
 

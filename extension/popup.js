@@ -1,6 +1,6 @@
 // FloatMini - popup
 import { sendToTab } from './tab-bridge.js';
-import { FEED_ORIGINS, hasFeedPermission, syncFeedScripts } from './feed-sites.js';
+import { EXTRA_ORIGINS, hasExtraPermission, syncExtraScripts } from './extra-sites.js';
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $('status');
@@ -51,8 +51,6 @@ async function run(message) {
   }
 }
 
-$('btn-float').addEventListener('click', () => run({ action: 'TOGGLE_FLOAT' }));
-
 document.querySelectorAll('[data-action]').forEach((btn) => {
   btn.addEventListener('click', () =>
     run({ action: btn.dataset.action, seconds: Number(btn.dataset.seconds) || 0 })
@@ -80,41 +78,7 @@ sizeButtons.forEach((btn) => {
 });
 
 // --- Estado salvo -----------------------------------------------------------
-let currentPipSize = 'auto';
-
-chrome.storage.local.get(['pipSize'], (res) => {
-  currentPipSize = res.pipSize || 'auto';
-  markActiveSize(sizeKey(currentPipSize));
-});
-
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'local') return;
-  if (changes.pipSize) currentPipSize = changes.pipSize.newValue || 'auto';
-});
-
-// --- Abrir link -------------------------------------------------------------
-$('url-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const raw = $('url-input').value.trim();
-  let url;
-  try {
-    url = new URL(raw);
-    if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error();
-  } catch {
-    showStatus('Cole um link completo começando com https://', 'error');
-    return;
-  }
-  const size = currentPipSize && typeof currentPipSize === 'object' ? currentPipSize : { width: 480, height: 270 };
-  // Espaço extra para a barra de título e a interface do site.
-  const res = await chrome.runtime.sendMessage({
-    action: 'OPEN_IN_COMPACT_WINDOW',
-    url: url.href,
-    width: Math.max(420, size.width + 40),
-    height: Math.max(360, size.height + 150)
-  });
-  if (res?.error) showStatus(res.error, 'error');
-  else window.close();
-});
+chrome.storage.local.get(['pipSize'], (res) => markActiveSize(sizeKey(res.pipSize || 'auto')));
 
 // --- Shorts, TikTok e Reels -----------------------------------------------------
 const feedAuto = $('feed-auto');
@@ -123,22 +87,24 @@ chrome.storage.local.get(['feedAutoAdvance'], (res) => {
 });
 feedAuto.addEventListener('change', () => chrome.storage.local.set({ feedAutoAdvance: feedAuto.checked }));
 
-const feedPerm = $('feed-perm');
-function renderFeedPerm(granted) {
-  feedPerm.dataset.on = String(granted);
-  feedPerm.textContent = granted ? 'Alt+P ativo no TikTok e Instagram · desativar' : 'Ativar Alt+P no TikTok e Instagram';
+// --- Streamings, TikTok e Instagram (permissão opcional) ---------------------
+const extraPerm = $('extra-perm');
+function renderExtraPerm(granted) {
+  extraPerm.dataset.on = String(granted);
+  extraPerm.textContent = granted ? 'Ativo ✓' : 'Ativar';
+  extraPerm.title = granted ? 'Clique para desativar nesses sites' : 'O navegador vai pedir permissão só para esses sites';
 }
-hasFeedPermission().then(renderFeedPerm);
-feedPerm.addEventListener('click', async () => {
+hasExtraPermission().then(renderExtraPerm);
+extraPerm.addEventListener('click', async () => {
   try {
-    if (feedPerm.dataset.on === 'true') {
-      await chrome.permissions.remove({ origins: FEED_ORIGINS });
+    if (extraPerm.dataset.on === 'true') {
+      await chrome.permissions.remove({ origins: EXTRA_ORIGINS });
     } else {
       // O pedido precisa sair direto do clique (gesto do usuário).
-      await chrome.permissions.request({ origins: FEED_ORIGINS });
+      await chrome.permissions.request({ origins: EXTRA_ORIGINS });
     }
-    renderFeedPerm(await syncFeedScripts());
-    if (feedPerm.dataset.on === 'true') showStatus('Pronto! Recarregue a aba do TikTok ou do Instagram.', 'ok');
+    renderExtraPerm(await syncExtraScripts());
+    if (extraPerm.dataset.on === 'true') showStatus('Pronto! Recarregue a aba do site para o ícone aparecer.', 'ok');
   } catch {
     showStatus('Não foi possível mudar a permissão.', 'error');
   }

@@ -54,7 +54,7 @@ Novas versões são publicadas nas lojas pelo GitHub Actions quando a versão do
 
 A extensão usa a API **Document Picture-in-Picture** (Chrome 116+ e Firefox 151+), que abre uma janela do sistema operacional que fica por cima de qualquer programa. O vídeo da página é movido para essa janela e devolvido ao lugar original quando ela fecha.
 
-O navegador só permite abrir essa janela logo após um clique ou tecla **dentro da página**. Por isso `Alt + P` é tratado pelo próprio content script, e os pedidos vindos do popup ou do menu de contexto mostram um botão na página pedindo um clique.
+O navegador só permite abrir essa janela logo após um clique ou tecla **dentro da página**. Por isso `Alt + P` é tratado pelo próprio content script, e os pedidos vindos do menu de contexto ou do atalho global mostram um botão na página pedindo um clique.
 
 ---
 

@@ -82,34 +82,8 @@ kbd {
   display: none;
 }
 
-/* Botão principal: branco, como o play da janela flutuante */
-.btn-primary {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 11px;
-  border: 0;
-  border-radius: 999px;
-  background: #fff;
-  color: #0a0a0a;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.btn-primary:hover {
-  background: #e5e5e5;
-}
-
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
 .hint {
-  margin: 10px 2px 16px;
+  margin: 0 2px 16px;
   font-size: 11px;
   line-height: 1.7;
   color: #a3a3a3;
@@ -286,6 +260,48 @@ kbd {
   color: #86efac;
 }
 
+/* Sites extras */
+.extra-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.extra-text {
+  flex: 1;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #a3a3a3;
+}
+
+.pill-btn {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #0a0a0a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pill-btn:hover {
+  background: #e5e5e5;
+}
+
+.pill-btn[data-on='true'] {
+  background: transparent;
+  color: #86efac;
+  border: 1px solid #14532d;
+}
+
+.inline-ic {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+
 /* Pedido de avaliação */
 .rate {
   display: flex;
@@ -329,70 +345,6 @@ kbd {
 .rate button:hover {
   background: #262626;
   color: #fff;
-}
-
-/* Abrir link */
-.quick-url-box label {
-  display: block;
-  margin: 0 2px 8px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #737373;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.input-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 4px 4px 10px;
-  border: 1px solid #262626;
-  border-radius: 999px;
-  background: #111;
-  transition: border-color 0.15s ease;
-}
-
-.input-row:focus-within {
-  border-color: #525252;
-}
-
-.input-icon {
-  display: flex;
-  color: #737373;
-}
-
-.input-icon svg {
-  width: 16px;
-  height: 16px;
-}
-
-.input-row input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  outline: none;
-  background: transparent;
-  font-size: 12px;
-}
-
-.input-row input::placeholder {
-  color: #737373;
-}
-
-.input-row button {
-  padding: 6px 14px;
-  border: 0;
-  border-radius: 999px;
-  background: #fff;
-  color: #0a0a0a;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.input-row button:hover {
-  background: #e5e5e5;
 }
 
 /* Rodapé */
