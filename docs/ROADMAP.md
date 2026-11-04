@@ -22,6 +22,10 @@ Na imagem, o que é novo está com contorno amarelo tracejado. O "Auto-avançar"
 4. **Título do episódio** — nome do episódio aparece discreto em cima ao mexer o mouse.
 5. **Avançar/voltar por site** — conferir em cada streaming (Max, Globoplay, Disney+, Prime) se mudar o tempo direto funciona ou se precisa da API do player, como na Netflix.
 
+## Projeto (decidido)
+
+1. **Pedir avaliação** — depois de algumas vezes usando a janela flutuante, aparece no menu um "Gostou? Avalie na loja", discreto e uma vez só (link da loja certa: Chrome ou Firefox).
+
 ## Projeto (sugestões, a decidir)
 
 1. **Atualizar as Actions** para `@v5` (aviso de Node 20 obsoleto) — edição manual nos workflows.
@@ -29,7 +33,6 @@ Na imagem, o que é novo está com contorno amarelo tracejado. O "Auto-avançar"
 3. **Formulário de bug** (issue template) e link "Relatar problema" no menu da extensão.
 4. **Página no GitHub Pages** com links das lojas e política de privacidade.
 5. **Página da Chrome Web Store em inglês** (texto pronto em `store/LISTING.md`).
-6. **Pedir avaliação** no menu, discreto e uma vez só, depois de alguns usos.
 
 ## Correções de bugs
 
