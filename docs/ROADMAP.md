@@ -2,6 +2,10 @@
 
 Ideias guardadas para a 3.0. Nada disto está implementado ainda.
 
+![Como ficaria a 3.0](img/floatmini-3.0-como-ficaria.png)
+
+Na imagem, o que é novo está com contorno amarelo tracejado. O "Auto-avançar" pode ficar na janela ou só no menu da extensão (a decidir).
+
 ## Shorts, TikTok e Reels (decidido)
 
 1. **Auto-avançar** — opção no menu: quando o vídeo acaba, a janela vai sozinha para o próximo.
@@ -10,7 +14,7 @@ Ideias guardadas para a 3.0. Nada disto está implementado ainda.
 4. **Lembrar tamanho/posição da janela em pé** — separado do tamanho da janela de vídeo normal.
 5. **Curtir com duplo clique** — clica no "curtir" do site. Por último: mexe na conta e os sites mudam com frequência.
 
-## Streaming (sugestões, a decidir)
+## Streaming (decidido)
 
 1. **Pular abertura / recapitulação / créditos** — quando o site mostra o botão, ele aparece também na janela flutuante (opção: pular sozinho).
 2. **Próximo episódio** — botão na janela quando o site oferece o próximo episódio.
