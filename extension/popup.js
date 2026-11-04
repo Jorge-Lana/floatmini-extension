@@ -1,5 +1,6 @@
 // FloatMini - popup
 import { sendToTab } from './tab-bridge.js';
+import { FEED_ORIGINS, hasFeedPermission, syncFeedScripts } from './feed-sites.js';
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $('status');
@@ -114,3 +115,49 @@ $('url-form').addEventListener('submit', async (e) => {
   if (res?.error) showStatus(res.error, 'error');
   else window.close();
 });
+
+// --- Shorts, TikTok e Reels -----------------------------------------------------
+const feedAuto = $('feed-auto');
+chrome.storage.local.get(['feedAutoAdvance'], (res) => {
+  feedAuto.checked = !!res.feedAutoAdvance;
+});
+feedAuto.addEventListener('change', () => chrome.storage.local.set({ feedAutoAdvance: feedAuto.checked }));
+
+const feedPerm = $('feed-perm');
+function renderFeedPerm(granted) {
+  feedPerm.dataset.on = String(granted);
+  feedPerm.textContent = granted ? 'Alt+P ativo no TikTok e Instagram · desativar' : 'Ativar Alt+P no TikTok e Instagram';
+}
+hasFeedPermission().then(renderFeedPerm);
+feedPerm.addEventListener('click', async () => {
+  try {
+    if (feedPerm.dataset.on === 'true') {
+      await chrome.permissions.remove({ origins: FEED_ORIGINS });
+    } else {
+      // O pedido precisa sair direto do clique (gesto do usuário).
+      await chrome.permissions.request({ origins: FEED_ORIGINS });
+    }
+    renderFeedPerm(await syncFeedScripts());
+    if (feedPerm.dataset.on === 'true') showStatus('Pronto! Recarregue a aba do TikTok ou do Instagram.', 'ok');
+  } catch {
+    showStatus('Não foi possível mudar a permissão.', 'error');
+  }
+});
+
+// --- Pedido de avaliação (uma vez, depois de alguns usos) ----------------------
+const RATE_AFTER = 5;
+const isFirefox = chrome.runtime.getURL('').startsWith('moz-extension:');
+const RATE_URL = isFirefox
+  ? 'https://addons.mozilla.org/firefox/addon/floatmini/reviews/'
+  : 'https://chromewebstore.google.com/detail/iadkhoobiblaihcanofckjchegddgihh/reviews';
+const rateBox = $('rate');
+$('rate-link').href = RATE_URL;
+chrome.storage.local.get(['floatCount', 'rateDone'], (res) => {
+  rateBox.hidden = !!res.rateDone || (Number(res.floatCount) || 0) < RATE_AFTER;
+});
+const rateDone = () => {
+  chrome.storage.local.set({ rateDone: true });
+  rateBox.hidden = true;
+};
+$('rate-link').addEventListener('click', rateDone);
+$('rate-close').addEventListener('click', rateDone);

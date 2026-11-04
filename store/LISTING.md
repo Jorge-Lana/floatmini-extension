@@ -46,16 +46,20 @@ O FloatMini coloca seus vídeos e músicas numa mini janela flutuante que fica S
 🎬 SITES DE STREAMING E OUTROS VÍDEOS
 • O vídeo em janela flutuante com linha do tempo, ±10 s, velocidade e volume
 • As legendas do site vão junto para a janela
-• Abra pelo botão da extensão ou pelo menu do botão direito
+• "Pular abertura" e "Próximo episódio" direto na janela
+• A janela acompanha o próximo episódio sozinha
+• Abra com Alt + Shift + P, pelo botão da extensão ou pelo menu do botão direito
 
 📱 SHORTS, TIKTOK E REELS
 • Janela em pé, do tamanho certo para vídeos verticais
 • Setas na lateral para o vídeo anterior/próximo, volume no canto
 • Também passa rolando ou arrastando na janela (ou ↑ ↓); clique no vídeo pausa
+• Opção de passar sozinho quando o vídeo acaba, com linha fina de progresso
+• Alt + P no TikTok e no Instagram (ative no menu da extensão)
 
 ⚡ RÁPIDO DE USAR
 • Ícone integrado na barra do próprio player do YouTube e do YouTube Music
-• Atalho Alt + P no YouTube, YouTube Music e Spotify
+• Atalho Alt + P no YouTube, YouTube Music e Spotify; Alt + Shift + P em qualquer site
 • Também pelo botão da extensão ou pelo menu do botão direito
 • Ao fechar a janela, o vídeo volta para a página exatamente onde estava
 
@@ -94,16 +98,20 @@ FloatMini puts your videos and music in a small floating window that stays ALWAY
 🎬 STREAMING SITES AND OTHER VIDEOS
 • The video in a floating window with timeline, ±10 s, speed and volume
 • The site's subtitles come along to the window
-• Open it from the extension button or the right-click menu
+• "Skip intro" and "Next episode" right in the window
+• The window follows the next episode on its own
+• Open it with Alt + Shift + P, the extension button or the right-click menu
 
 📱 SHORTS, TIKTOK AND REELS
 • Portrait window sized for vertical videos
 • Side arrows for previous/next video, volume in the corner
 • Scroll or drag in the window to swipe too (or ↑ ↓); click the video to pause
+• Option to auto-advance when the video ends, with a thin progress line
+• Alt + P on TikTok and Instagram (turn it on in the extension menu)
 
 ⚡ QUICK TO USE
 • Icon built into the YouTube and YouTube Music player bar
-• Alt + P shortcut on YouTube, YouTube Music and Spotify
+• Alt + P on YouTube, YouTube Music and Spotify; Alt + Shift + P on any site
 • Also from the extension button or the right-click menu
 • When you close the window, the video goes back to the page exactly where it was
 

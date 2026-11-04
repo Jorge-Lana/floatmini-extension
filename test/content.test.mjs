@@ -13,7 +13,7 @@ const openWindows = [];
 afterEach(() => openWindows.splice(0).forEach((w) => w.close()));
 
 /** Cria uma página falsa, injeta o content script e devolve utilidades de teste. */
-function loadPage({ url, html, active = false }) {
+function loadPage({ url, html, active = false, storage = {} }) {
   const source = CONTENT_SRC;
   const dom = new JSDOM(`<!doctype html><html><head><title>Página</title></head><body>${html}</body></html>`, {
     url,
@@ -31,7 +31,7 @@ function loadPage({ url, html, active = false }) {
   const userActivation = { isActive: active };
   Object.defineProperty(window.navigator, 'userActivation', { value: userActivation, configurable: true });
 
-  const store = {};
+  const store = { ...storage };
   let onMessage = null;
   window.chrome = {
     runtime: { onMessage: { addListener: (fn) => (onMessage = fn) } },
@@ -597,7 +597,7 @@ test('ponte de volume: usa a API do player e desfaz mudanças do site', async ()
 });
 
 test('YouTube Music: clicar na barra de progresso muda o tempo da música', async () => {
-  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html: YTM_MINIPLAYER + '<video></video>', active: true });
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html: YTM_MINIPLAYER.replace('0:47 / 3:12', '') + '<video></video>', active: true });
   const media = fakeMedia(page.document.querySelector('video'), { duration: 200, currentTime: 10 });
   const docPip = fakeDocumentPip(page.window);
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
@@ -788,7 +788,7 @@ test('fechar a janela flutuante libera o volume do site', async () => {
 });
 
 test('YouTube Music: na troca de faixa a barra segue o <video> que está tocando', async () => {
-  const html = YTM_MINIPLAYER + '<video class="html5-main-video" id="old"></video><video id="new"></video>';
+  const html = YTM_MINIPLAYER.replace('0:47 / 3:12', '') + '<video class="html5-main-video" id="old"></video><video id="new"></video>';
   const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html, active: true });
   // Música anterior terminou (parada no fim); a nova toca no outro <video>.
   fakeMedia(page.document.getElementById('old'), { duration: 200, currentTime: 200, paused: true });
@@ -821,4 +821,131 @@ test('vídeo comum não entra no modo feed', async () => {
   const docPip = fakeDocumentPip(page.window);
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
   assert.equal(docPip.window.document.body.classList.contains('fm-feed'), false);
+});
+
+test('YouTube Music: sem pausa entre faixas, a barra usa o tempo do site, não o do <video>', async () => {
+  const html = YTM_MINIPLAYER.replace('0:47 / 3:12', '0:12 / 2:00') + '<video class="html5-main-video"></video>';
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html, active: true });
+  // O <video> segue contando desde a música anterior (250 s de 400 s).
+  const media = fakeMedia(page.document.querySelector('video'), { duration: 400, currentTime: 250 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  assert.equal(pipDoc.querySelector('.fm-bar').style.width, '10%'); // 12 s de 120 s
+  pipDoc.querySelector('.fm-progress').getBoundingClientRect = () => ({ left: 0, width: 200, top: 0, height: 3 });
+  pipDoc.querySelector('.fm-seek').dispatchEvent(new docPip.window.MouseEvent('pointerdown', { clientX: 100, bubbles: true }));
+  assert.equal(media.currentTime, 298); // início da música (238 s) + metade de 120 s
+});
+
+test('YouTube Music: volume da janela segue o player, não o <video> normalizado', async () => {
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html: YTM_MINIPLAYER + '<video></video>', active: true });
+  const media = fakeMedia(page.document.querySelector('video'));
+  media.volume = 0.35; // normalização do YouTube: o <video> fica mais baixo
+  const sent = [];
+  page.document.addEventListener('floatmini:volume', (e) => sent.push(JSON.parse(e.detail)));
+  // O player (yt-volume.js) informa o volume que aparece no site: 100%.
+  page.document.dispatchEvent(new page.window.CustomEvent('floatmini:volume-state', { detail: JSON.stringify({ percent: 100, muted: false }) }));
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const slider = docPip.window.document.querySelector('.fm-volume input[type="range"]');
+  assert.equal(slider.value, '100');
+  slider.value = '40';
+  slider.dispatchEvent(new docPip.window.Event('input'));
+  assert.deepEqual(sent.at(-1), { volume: 0.4, muted: false });
+  assert.equal(media.volume, 0.35, 'o <video> fica com o player (normalização)');
+  assert.equal(slider.value, '40');
+});
+
+
+test('feed: auto-avançar no fim do vídeo e linha fina de progresso', async () => {
+  const html = `<div id="feed"><div class="item"><video id="v1"></video></div><div class="item"><video id="v2"></video></div></div>
+    <button data-e2e="arrow-down">↓</button>`;
+  const page = loadPage({ url: 'https://www.tiktok.com/foryou', html, active: true, storage: { feedAutoAdvance: true } });
+  const m1 = fakeMedia(page.document.getElementById('v1'), { duration: 20, currentTime: 5 });
+  const m2 = fakeMedia(page.document.getElementById('v2'), { duration: 15, paused: true });
+  page.document.querySelector('[data-e2e="arrow-down"]').addEventListener('click', () => {
+    m1.paused = true;
+    m2.paused = false;
+  });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  const v1 = pipDoc.querySelector('.fm-stage video');
+  v1.dispatchEvent(new page.window.Event('timeupdate'));
+  assert.equal(pipDoc.querySelector('.fm-feed-line > div').style.width, '25%');
+  m1.currentTime = 19.9; // fim do vídeo
+  v1.dispatchEvent(new page.window.Event('timeupdate'));
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(pipDoc.querySelector('.fm-stage video').id, 'v2', 'passou sozinho para o próximo');
+});
+
+test('feed: sem auto-avançar, o vídeo que acaba continua na janela', async () => {
+  const html = `<div id="feed"><div class="item"><video id="v1"></video></div><div class="item"><video id="v2"></video></div></div>`;
+  const page = loadPage({ url: 'https://www.tiktok.com/foryou', html, active: true });
+  const m1 = fakeMedia(page.document.getElementById('v1'), { duration: 20, currentTime: 19.9 });
+  fakeMedia(page.document.getElementById('v2'), { duration: 15, paused: true });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  pipDoc.querySelector('.fm-stage video').dispatchEvent(new page.window.Event('timeupdate'));
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(pipDoc.querySelector('.fm-stage video').id, 'v1');
+  assert.equal(m1.paused, false);
+});
+
+test('streaming: "Pular abertura" do site aparece na janela e clica no botão do site', async () => {
+  const html = `<div class="watch-video"><video></video><button data-uia="player-skip-intro">Pular abertura</button></div>`;
+  const page = loadPage({ url: 'https://www.netflix.com/watch/1', html, active: true });
+  fakeMedia(page.document.querySelector('video'), { duration: 3000 });
+  let clicked = 0;
+  page.document.querySelector('[data-uia="player-skip-intro"]').addEventListener('click', () => clicked++);
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  await new Promise((r) => setTimeout(r, 700));
+  const btn = docPip.window.document.querySelector('.fm-site-action');
+  assert.equal(btn.hidden, false);
+  assert.equal(btn.textContent, 'Pular abertura ›');
+  btn.click();
+  assert.equal(clicked, 1);
+  assert.equal(btn.hidden, true);
+});
+
+test('streaming: "Próximo episódio" pelo texto, em qualquer site; anúncio do YouTube nunca', async () => {
+  const html = `<div><video></video></div><div role="button" aria-label="Próximo episódio"><span>Próximo episódio</span></div>`;
+  const page = loadPage({ url: 'https://globoplay.globo.com/v/1/', html, active: true });
+  fakeMedia(page.document.querySelector('video'), { duration: 3000 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  await new Promise((r) => setTimeout(r, 700));
+  assert.equal(docPip.window.document.querySelector('.fm-site-action').textContent, 'Próximo episódio ›');
+
+  const yt = loadPage({ url: 'https://www.youtube.com/watch?v=a', html: YT_HTML + '<button class="ytp-skip-ad-button">Pular anúncio</button><button>Pular abertura</button>', active: true });
+  fakeMedia(yt.document.querySelector('video'));
+  const ytPip = fakeDocumentPip(yt.window);
+  assert.equal(await yt.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  await new Promise((r) => setTimeout(r, 700));
+  assert.equal(ytPip.window.document.querySelector('.fm-site-action').hidden, true);
+});
+
+test('streaming: quando o site cria outro <video> para o próximo episódio, a janela acompanha', async () => {
+  const page = loadPage({ url: 'https://streaming.exemplo.com/assistir/1', html: '<div id="player"><video id="ep1"></video></div>', active: true });
+  const m1 = fakeMedia(page.document.getElementById('ep1'), { duration: 2400 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  // Episódio 1 termina; o site troca o player e cria o <video> do episódio 2.
+  m1.paused = true;
+  page.document.getElementById('player').innerHTML = '<video id="ep2"></video>';
+  fakeMedia(page.document.getElementById('ep2'), { duration: 2500 });
+  await new Promise((r) => setTimeout(r, 800));
+  assert.equal(pipDoc.querySelector('.fm-stage video').id, 'ep2');
+  assert.equal(pipDoc.querySelectorAll('.fm-stage video').length, 1);
+});
+
+test('abrir a janela conta o uso (para o pedido de avaliação)', async () => {
+  const page = loadPage({ url: 'https://www.youtube.com/watch?v=a', html: YT_HTML, active: true, storage: { floatCount: 4 } });
+  fakeMedia(page.document.querySelector('video'));
+  fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  assert.equal(page.store.floatCount, 5);
 });

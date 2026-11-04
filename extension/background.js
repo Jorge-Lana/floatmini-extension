@@ -1,5 +1,6 @@
 // FloatMini - service worker (Manifest V3)
 import { sendToTab } from './tab-bridge.js';
+import { syncFeedScripts } from './feed-sites.js';
 
 const MENU_ID = 'floatmini-toggle';
 
@@ -7,7 +8,14 @@ const MENU_ID = 'floatmini-toggle';
 // convite "Clique para flutuar" assim que carregarem.
 const tabsAwaitingPrompt = new Set();
 
+// TikTok/Instagram: mantém o content script de acordo com a permissão.
+const syncFeeds = () => syncFeedScripts().catch((err) => console.warn('[FloatMini] TikTok/Instagram:', err?.message || err));
+chrome.runtime.onStartup?.addListener(syncFeeds);
+chrome.permissions?.onAdded?.addListener(syncFeeds);
+chrome.permissions?.onRemoved?.addListener(syncFeeds);
+
 chrome.runtime.onInstalled.addListener(() => {
+  syncFeeds();
   // removeAll evita o erro de id duplicado quando a extensão é atualizada.
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({

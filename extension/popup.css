@@ -206,6 +206,131 @@ kbd {
   color: #0a0a0a;
 }
 
+/* Shorts, TikTok e Reels */
+.feed-box {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border: 1px solid #262626;
+  border-radius: 12px;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: #e5e5e5;
+  cursor: pointer;
+}
+
+.switch-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: #404040;
+  transition: background 0.15s ease;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.switch-row input:checked + .switch {
+  background: #22c55e;
+}
+
+.switch-row input:checked + .switch::after {
+  transform: translateX(14px);
+}
+
+.switch-row input:focus-visible + .switch {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.link-btn {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #a3a3a3;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  color: #fff;
+}
+
+.link-btn[data-on='true'] {
+  color: #86efac;
+}
+
+/* Pedido de avaliação */
+.rate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 8px 8px 12px;
+  border-radius: 12px;
+  background: #171717;
+  font-size: 12px;
+  color: #e5e5e5;
+}
+
+.rate[hidden] {
+  display: none;
+}
+
+.rate a {
+  color: #fbbf24;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.rate a:hover {
+  text-decoration: underline;
+}
+
+.rate button {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #737373;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rate button:hover {
+  background: #262626;
+  color: #fff;
+}
+
 /* Abrir link */
 .quick-url-box label {
   display: block;
