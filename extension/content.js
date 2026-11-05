@@ -842,13 +842,56 @@
     const stage = el(doc, 'div', 'fm-stage');
     let placeholder = null;
     let originalParent = null;
+
+    // TikTok: o player do site reinicia o <video> quando ele sai da página e
+    // a janela ficava preta. Lá a janela mostra um "espelho" do vídeo
+    // (captureStream) e o original continua no lugar dele.
+    let mirror = null;
+    let mirrorAudio = false; // Firefox: o som passa a sair pelo espelho
+    const mirrorOf = (v) => {
+      if (!IS_TIKTOK || mirror === false) return null;
+      const capture = v.captureStream || v.mozCaptureStream;
+      if (typeof capture !== 'function') return null;
+      try {
+        return { stream: capture.call(v), firefox: !v.captureStream };
+      } catch {
+        return null;
+      }
+    };
+    const syncMirrorAudio = () => {
+      if (!mirror || !mirrorAudio) return;
+      mirror.volume = video.volume;
+      mirror.muted = video.muted;
+    };
+
     const park = (v) => {
+      const captured = mirrorOf(v);
+      if (captured) {
+        if (!mirror) {
+          mirror = el(doc, 'video', 'fm-mirror');
+          mirror.autoplay = true;
+          mirror.playsInline = true;
+          stage.append(mirror);
+        }
+        mirrorAudio = captured.firefox;
+        mirror.muted = !mirrorAudio;
+        mirror.srcObject = captured.stream;
+        syncMirrorAudio();
+        mirror.play?.()?.catch?.(() => {});
+        placeholder = null;
+        originalParent = v.parentNode;
+        return;
+      }
+      // Sem espelho (navegador ou vídeo não deixam): move o vídeo de vez.
+      if (mirror) mirror.remove();
+      mirror = false;
       placeholder = document.createComment('floatmini-video');
       originalParent = v.parentNode;
       originalParent.insertBefore(placeholder, v);
       stage.append(v);
     };
     const unpark = (v) => {
+      if (mirror) return true; // o original nunca saiu da página
       let placed = true;
       if (placeholder?.isConnected) placeholder.replaceWith(v);
       else if (originalParent?.isConnected) originalParent.append(v);
@@ -1002,6 +1045,7 @@
       playBtn.title = video.paused ? 'Play (espaço)' : 'Pausar (espaço)';
       speedBtn.textContent = `${video.playbackRate}x`;
       doc.body.classList.toggle('fm-feed', isFeedPage());
+      syncMirrorAudio();
       volume.refresh();
       onTime();
     };
@@ -1145,6 +1189,7 @@
       unbind(video);
       const playing = !video.paused;
       unpark(video);
+      if (mirror) mirror.srcObject = null;
       if (playing && video.paused) video.play().catch(() => {});
     });
   }

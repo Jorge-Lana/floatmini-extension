@@ -995,3 +995,35 @@ test('TikTok/Instagram: sem botão fixo no canto (só o ícone em cima do vídeo
   assert.equal(page.document.getElementById('floatmini-trigger-btn'), null);
   assert.ok(page.document.getElementById('floatmini-video-btn'), 'ícone pronto para aparecer em cima do vídeo');
 });
+
+
+test('TikTok: a janela mostra um espelho do vídeo e o original fica na página', async () => {
+  const html = `<div id="feed"><div class="item"><video id="v1"></video></div><div class="item"><video id="v2"></video></div></div>
+    <button data-e2e="arrow-down">↓</button>`;
+  const page = loadPage({ url: 'https://www.tiktok.com/foryou', html, active: true });
+  const v1 = page.document.getElementById('v1');
+  const v2 = page.document.getElementById('v2');
+  const m1 = fakeMedia(v1, { duration: 20 });
+  const m2 = fakeMedia(v2, { duration: 15, paused: true });
+  v1.captureStream = () => ({ id: 'stream-1' });
+  v2.captureStream = () => ({ id: 'stream-2' });
+  page.document.querySelector('[data-e2e="arrow-down"]').addEventListener('click', () => {
+    m1.paused = true;
+    m2.paused = false;
+  });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  const mirror = pipDoc.querySelector('.fm-stage video.fm-mirror');
+  assert.ok(mirror, 'espelho na janela');
+  assert.equal(mirror.srcObject.id, 'stream-1');
+  assert.equal(mirror.muted, true, 'som continua saindo do vídeo original');
+  assert.equal(v1.ownerDocument, page.document, 'o vídeo original não sai da página');
+
+  [...pipDoc.querySelectorAll('.fm-feed-nav .fm-btn')][1].click();
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(mirror.srcObject.id, 'stream-2', 'espelho troca para o próximo vídeo');
+  assert.equal(pipDoc.querySelectorAll('.fm-stage video').length, 1);
+  docPip.window.close();
+  assert.equal(mirror.srcObject, null);
+});

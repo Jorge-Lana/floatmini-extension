@@ -10,6 +10,7 @@ Lista dos bugs relatados. As correções entram no PR "Correções de bugs" e sa
 | 4 | Corrigido na 3.0.1 | Instagram | Aberto pela página inicial ou pelo perfil, o reel vinha com a janela de vídeo comum (linha do tempo, ±10 s). Agora a página inicial usa o layout de feed (setas ▲ ▼ vão para o próximo vídeo, pulando fotos) e no perfil a extensão fica desligada. ![print](img/bugs/instagram-home-perfil-2026-11-04.png) | 3.0.0 |
 | 5 | Corrigido na 3.0.1 | Streamings (ex.: Max) | O botão "🗗 Flutuar" no canto ficava em cima da barra do player. Agora o ícone entra na barra do player, ao lado da tela cheia, como no YouTube; com a opção "Streamings, TikTok e Instagram" ativada no menu ele aparece sozinho. ![print](img/bugs/streaming-botao-flutuar-2026-11-04.png) | 3.0.0 |
 | 6 | Removido na 3.0.1 | Menu da extensão | "Flutuar mídia desta aba" e "Abrir um link numa janela compacta" eram confusos (pediam um clique extra na página). Saíram do menu; continuam o ícone na barra, Alt+P, Alt+Shift+P e o botão direito. | 3.0.0 |
+| 7 | Corrigido na 3.0.1 — confirmar | TikTok | A janela flutuante fica preta (o vídeo continua na página). Causa provável: o player do TikTok reinicia o `<video>` quando ele sai da página. Agora, no TikTok, a janela mostra um espelho do vídeo (`captureStream`) e o original fica no lugar; se o navegador não deixar espelhar, volta ao jeito antigo. O botão "Flutuar" em cima da barra do TikTok já saiu na 3.0.1. ![print](img/bugs/tiktok-janela-preta-2026-11-05.png) | 2.0.1 |
 
 ## Como relatar
 
