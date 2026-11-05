@@ -355,11 +355,24 @@
 
   // Feeds de vídeos curtos (um embaixo do outro): YouTube Shorts, TikTok e
   // Reels do Instagram. Neles a janela ganha botões de anterior/próximo.
+  const IS_INSTAGRAM = host === 'instagram.com' || host.endsWith('.instagram.com');
+  const IS_TIKTOK = host === 'tiktok.com' || host.endsWith('.tiktok.com');
+
   function isFeedPage() {
     if (SITE === 'youtube') return location.pathname.startsWith('/shorts');
-    if (host === 'tiktok.com' || host.endsWith('.tiktok.com')) return true;
-    if (host === 'instagram.com' || host.endsWith('.instagram.com')) return /^\/(reels?)(\/|$)/.test(location.pathname);
+    if (IS_TIKTOK) return true;
+    // Instagram: Reels e também a página inicial (um post embaixo do outro).
+    if (IS_INSTAGRAM) return location.pathname === '/' || /^\/(reels?)(\/|$)/.test(location.pathname);
     return false;
+  }
+
+  // Perfil do Instagram (grade de posts): a extensão fica desligada.
+  const INSTAGRAM_ROUTES = /^\/(explore|reels?|direct|accounts|stories|p|tv|about|legal|web|developer|emails|challenge|session)(\/|$)/;
+  function isInstagramProfile() {
+    if (!IS_INSTAGRAM) return false;
+    const path = location.pathname;
+    if (path === '/' || INSTAGRAM_ROUTES.test(path)) return false;
+    return /^\/[^/]+\/((reels|tagged|saved)\/?)?$/.test(path);
   }
 
   // Vídeo do feed que está na tela: tocando e mais visível no viewport.
@@ -795,6 +808,14 @@
       btn.click();
       return;
     }
+    // Sem botão: leva o próximo/anterior <video> da página para o meio da
+    // tela (na página inicial do Instagram há fotos entre os vídeos).
+    const videos = [...document.querySelectorAll('video')];
+    const target = videos[videos.indexOf(near) + dir];
+    if (target && target.scrollIntoView) {
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
     const box = scrollParent(near);
     if (box) box.scrollBy({ top: dir * box.clientHeight, behavior: 'smooth' });
     else window.scrollBy({ top: dir * innerHeight, behavior: 'smooth' });
@@ -821,13 +842,56 @@
     const stage = el(doc, 'div', 'fm-stage');
     let placeholder = null;
     let originalParent = null;
+
+    // TikTok: o player do site reinicia o <video> quando ele sai da página e
+    // a janela ficava preta. Lá a janela mostra um "espelho" do vídeo
+    // (captureStream) e o original continua no lugar dele.
+    let mirror = null;
+    let mirrorAudio = false; // Firefox: o som passa a sair pelo espelho
+    const mirrorOf = (v) => {
+      if (!IS_TIKTOK || mirror === false) return null;
+      const capture = v.captureStream || v.mozCaptureStream;
+      if (typeof capture !== 'function') return null;
+      try {
+        return { stream: capture.call(v), firefox: !v.captureStream };
+      } catch {
+        return null;
+      }
+    };
+    const syncMirrorAudio = () => {
+      if (!mirror || !mirrorAudio) return;
+      mirror.volume = video.volume;
+      mirror.muted = video.muted;
+    };
+
     const park = (v) => {
+      const captured = mirrorOf(v);
+      if (captured) {
+        if (!mirror) {
+          mirror = el(doc, 'video', 'fm-mirror');
+          mirror.autoplay = true;
+          mirror.playsInline = true;
+          stage.append(mirror);
+        }
+        mirrorAudio = captured.firefox;
+        mirror.muted = !mirrorAudio;
+        mirror.srcObject = captured.stream;
+        syncMirrorAudio();
+        mirror.play?.()?.catch?.(() => {});
+        placeholder = null;
+        originalParent = v.parentNode;
+        return;
+      }
+      // Sem espelho (navegador ou vídeo não deixam): move o vídeo de vez.
+      if (mirror) mirror.remove();
+      mirror = false;
       placeholder = document.createComment('floatmini-video');
       originalParent = v.parentNode;
       originalParent.insertBefore(placeholder, v);
       stage.append(v);
     };
     const unpark = (v) => {
+      if (mirror) return true; // o original nunca saiu da página
       let placed = true;
       if (placeholder?.isConnected) placeholder.replaceWith(v);
       else if (originalParent?.isConnected) originalParent.append(v);
@@ -981,6 +1045,7 @@
       playBtn.title = video.paused ? 'Play (espaço)' : 'Pausar (espaço)';
       speedBtn.textContent = `${video.playbackRate}x`;
       doc.body.classList.toggle('fm-feed', isFeedPage());
+      syncMirrorAudio();
       volume.refresh();
       onTime();
     };
@@ -1124,6 +1189,7 @@
       unbind(video);
       const playing = !video.paused;
       unpark(video);
+      if (mirror) mirror.srcObject = null;
       if (playing && video.paused) video.play().catch(() => {});
     });
   }
@@ -1457,6 +1523,7 @@
       return 'closed';
     }
 
+    if (isInstagramProfile()) return 'no_media';
     const video = IS_MUSIC_SITE ? null : findMainVideo();
     if (!IS_MUSIC_SITE && !video) {
       showToast('Nenhum vídeo encontrado nesta página.');
@@ -1566,6 +1633,64 @@
     toastTimer = setTimeout(() => toast.remove(), 3500);
   }
 
+  // Feeds (TikTok, Instagram) e sites sem barra reconhecível: um botão
+  // pequeno aparece no canto do vídeo quando o mouse passa por cima.
+  const OVERLAY_ID = 'floatmini-video-btn';
+  let overlayBtn = null;
+  let overlayVideo = null;
+  let overlayHideTimer = null;
+
+  function ensureOverlayButton() {
+    if (overlayBtn?.isConnected) return overlayBtn;
+    const btn = (overlayBtn = createNativeButton());
+    btn.id = OVERLAY_ID;
+    btn.dataset.floatmini = 'overlay';
+    Object.assign(btn.style, {
+      position: 'fixed',
+      zIndex: '2147483646',
+      width: '36px',
+      height: '36px',
+      background: 'rgba(0, 0, 0, 0.55)',
+      display: 'none'
+    });
+    document.documentElement.append(btn);
+    return btn;
+  }
+
+  function placeOverlay() {
+    const btn = overlayBtn;
+    const v = overlayVideo;
+    if (!btn || !v?.isConnected) return;
+    const rect = v.getBoundingClientRect();
+    if (rect.width < 120 || rect.height < 80) {
+      btn.style.display = 'none';
+      return;
+    }
+    const left = isFeedPage() ? rect.left + 10 : rect.right - 46;
+    btn.style.left = `${Math.round(left)}px`;
+    btn.style.top = `${Math.round(Math.max(rect.top, 0) + 10)}px`;
+  }
+
+  function onPagePointer(e) {
+    if (!overlayBtn || isInstagramProfile() || window.documentPictureInPicture?.window) return;
+    if (nativeButton?.isConnected && !IS_INSTAGRAM && !IS_TIKTOK) return;
+    if (e.target === overlayBtn || overlayBtn.contains(e.target)) return;
+    const hit = [...document.querySelectorAll('video')].find((v) => {
+      const r = v.getBoundingClientRect();
+      return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && r.width >= 120;
+    });
+    if (!hit) return;
+    overlayVideo = hit;
+    overlayBtn.style.display = 'inline-flex';
+    placeOverlay();
+    clearTimeout(overlayHideTimer);
+    overlayHideTimer = setTimeout(() => {
+      if (!overlayBtn.matches(':hover')) overlayBtn.style.display = 'none';
+    }, 2500);
+  }
+  document.addEventListener('mousemove', onPagePointer, { passive: true, capture: true });
+  window.addEventListener('scroll', placeOverlay, { passive: true, capture: true });
+
   function attachFloatButton() {
     if (document.getElementById('floatmini-trigger-btn')) return;
 
@@ -1653,6 +1778,31 @@
     return out;
   }
 
+  // Streaming e outros sites: o botão entra na barra do player, ao lado do
+  // botão de tela cheia (quase todo player tem um).
+  const FULLSCREEN_SELECTOR = [
+    '[data-uia="control-fullscreen-enter"]',
+    '[data-uia="control-fullscreen-exit"]',
+    '.atvwebplayersdk-fullscreen-button',
+    '[data-testid="player-ux-fullscreen-button"]',
+    '[aria-label*="tela cheia" i]',
+    '[aria-label*="full screen" i]',
+    '[aria-label*="fullscreen" i]',
+    '[title*="tela cheia" i]',
+    '[title*="full screen" i]',
+    '[title*="fullscreen" i]'
+  ].join(', ');
+
+  function findFullscreenButton() {
+    let found = [...document.querySelectorAll(FULLSCREEN_SELECTOR)];
+    if (!found.length) found = deepAll(FULLSCREEN_SELECTOR);
+    const usable = found
+      .map((node) => node.closest('button, [role="button"]') || node)
+      .filter((node) => node.parentNode && node.id !== NATIVE_BUTTON_ID && isVisible(node));
+    // O da barra do player fica embaixo: pega o mais baixo da tela.
+    return usable.sort((a, b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top)[0] || null;
+  }
+
   function createNativeButton() {
     const btn = document.createElement('button');
     btn.id = NATIVE_BUTTON_ID;
@@ -1660,6 +1810,7 @@
     btn.setAttribute('aria-label', 'Janela flutuante (FloatMini)');
     btn.title = 'Janela flutuante sempre no topo (Alt+P)';
     if (SITE === 'youtube') btn.className = 'ytp-button';
+    btn.dataset.floatmini = 'native';
     Object.assign(btn.style, {
       display: 'inline-flex',
       alignItems: 'center',
@@ -1741,10 +1892,58 @@
       }
     }
 
-    const hasMedia = IS_MUSIC_SITE || !!document.querySelector('video');
-    if (hasMedia) attachFloatButton();
-    else document.getElementById('floatmini-trigger-btn')?.remove();
+    // Instagram (perfil desligado) e TikTok: só o botão em cima do vídeo.
+    if (IS_INSTAGRAM || IS_TIKTOK) {
+      document.getElementById('floatmini-trigger-btn')?.remove();
+      if (isInstagramProfile()) {
+        if (overlayBtn) overlayBtn.style.display = 'none';
+        return;
+      }
+      ensureOverlayButton();
+      return;
+    }
+
+    // Spotify: botão no canto, acima da barra do player.
+    if (IS_MUSIC_SITE) {
+      attachFloatButton();
+      return;
+    }
+
+    // Streaming e outros sites com vídeo: na barra do player, ao lado da tela
+    // cheia. Quando a barra some (vídeo tocando), o botão some junto.
+    if (!document.querySelector('video')) {
+      nativeButton?.remove();
+      if (overlayBtn) overlayBtn.style.display = 'none';
+      return;
+    }
+    if (!nativeButton?.isConnected || !nativeButton.parentNode?.isConnected) {
+      const anchor = findFullscreenButton();
+      if (anchor) {
+        nativeButton = nativeButton || createNativeButton();
+        const rect = anchor.getBoundingClientRect();
+        if (rect.height >= 24) {
+          nativeButton.style.width = `${Math.round(rect.width || rect.height)}px`;
+          nativeButton.style.height = `${Math.round(rect.height)}px`;
+        }
+        anchor.parentNode.insertBefore(nativeButton, anchor);
+      }
+    }
+    updateNativeButtonState();
+    if (nativeButton?.isConnected) {
+      if (overlayBtn) overlayBtn.style.display = 'none';
+    } else {
+      ensureOverlayButton();
+    }
   }
+  // Netflix: pede a ponte com o player (ver page-bridge.js).
+  if (SITE === 'netflix') {
+    try {
+      chrome.runtime.sendMessage({ action: 'INJECT_PAGE_BRIDGE' })?.catch?.(() => {});
+    } catch {
+      /* sem background: a ponte vem pelo tab-bridge */
+    }
+  }
+
   refreshFloatButton();
   setInterval(refreshFloatButton, 2000);
   // O YouTube troca de página sem recarregar; reposiciona o botão na hora.
@@ -1782,10 +1981,6 @@
       case 'TOGGLE_FLOAT':
         toggleFloat().then(reply, () => reply('failed'));
         return true;
-      case 'SHOW_FLOAT_PROMPT':
-        showClickPrompt();
-        reply('prompt');
-        return false;
       case 'SEEK': {
         const video = findMainVideo();
         if (!video || SITE === 'spotify') {

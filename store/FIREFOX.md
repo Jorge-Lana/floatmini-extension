@@ -65,7 +65,7 @@ How to test:
 1. Open any YouTube video (youtube.com/watch?v=...).
 2. Click the FloatMini icon in the YouTube player control bar (next to the subtitles button), or press Alt+P with the page focused. The video opens in a floating window with playback and volume controls.
 3. Open music.youtube.com, play a song and press Alt+P (or click the FloatMini icon in the player bar, next to the like button). A compact mini player opens with artwork, shuffle/repeat and volume.
-4. The browser only allows the floating window right after a click or key press on the page. When triggered from the toolbar popup or the context menu, a blue "click here" button appears on the page to provide that user gesture.
+4. The browser only allows the floating window right after a click or key press on the page. When triggered from the context menu or the Alt+Shift+P shortcut, a blue "click here" button appears on the page to provide that user gesture.
 
 No account or login is required. The extension collects no data and makes no network requests.
 The submitted files are the original, unminified source code: https://github.com/Jorge-Lana/floatmini-extension

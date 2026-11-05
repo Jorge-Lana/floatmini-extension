@@ -17,9 +17,8 @@
   </header>
 
   <main class="content">
-    <button id="btn-float" class="btn-primary" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg><span>Flutuar mídia desta aba</span></button>
-    <p class="hint">
-      Atalho: <kbd>Alt</kbd> <kbd>P</kbd> no YouTube e no Spotify, ou <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>P</kbd> em qualquer site.
+    <p class="hint hint-top">
+      Para flutuar: o ícone <svg class="inline-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg> na barra do player, <kbd>Alt</kbd> <kbd>P</kbd> na página, <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>P</kbd> em qualquer site ou o botão direito → <em>Abrir na janela flutuante</em>.
     </p>
     <p id="status" class="status" role="status" hidden></p>
 
@@ -46,17 +45,13 @@
         <input type="checkbox" id="feed-auto" role="switch">
         <span class="switch" aria-hidden="true"></span>
       </label>
-      <button id="feed-perm" class="link-btn" type="button">Ativar Alt+P no TikTok e Instagram</button>
     </div>
 
-    <form id="url-form" class="quick-url-box">
-      <label for="url-input">Abrir um link numa janela compacta</label>
-      <div class="input-row">
-        <span class="input-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></span>
-        <input type="url" id="url-input" placeholder="Cole um link de vídeo" required>
-        <button type="submit">Abrir</button>
-      </div>
-    </form>
+    <div class="section-title">Streamings, TikTok e Instagram</div>
+    <div class="feed-box extra-box">
+      <p class="extra-text">Ícone na barra do player e <kbd>Alt</kbd> <kbd>P</kbd> também na Netflix, Prime Video, Disney+, Max, Globoplay, Crunchyroll, TikTok e Instagram.</p>
+      <button id="extra-perm" class="pill-btn" type="button">Ativar</button>
+    </div>
   </main>
 
   <div id="rate" class="rate" hidden>

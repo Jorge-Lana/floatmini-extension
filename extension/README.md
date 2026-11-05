@@ -25,17 +25,18 @@ Requer Chrome, Edge, Brave ou Opera 116+, ou **Firefox 151+** (desktop).
 
 - Na página do vídeo ou da música, aperte **`Alt + P`** ou clique no ícone de janela flutuante. No YouTube e no YouTube Music ele fica na barra de controles do player, junto das outras opções (fica azul enquanto a janela está aberta); no Spotify e em outros sites, é o botão **🗗 Flutuar** no canto da tela. A janela abre na hora.
 - Para fechar, aperte `Alt + P` de novo ou feche a janela flutuante. O vídeo volta para o lugar dele na página.
-- Também dá para usar o botão do popup ou o menu do botão direito ("Abrir na janela flutuante"). Nesses casos aparece um botão azul na página pedindo **um clique**: o navegador só deixa abrir janelas flutuantes logo após um clique ou tecla *dentro* da página.
+- Também dá para usar o menu do botão direito ("Abrir na janela flutuante") ou `Alt + Shift + P` em qualquer site. Nesses casos aparece um botão azul na página pedindo **um clique**: o navegador só deixa abrir janelas flutuantes logo após um clique ou tecla *dentro* da página.
+- Streamings (Netflix, Prime Video, Disney+, Max, Globoplay, Crunchyroll, Paramount+, Apple TV+), TikTok e Instagram: ative no menu da extensão ("Streamings, TikTok e Instagram" → **Ativar**). O navegador pede permissão só desses sites; depois disso o ícone aparece na barra do player e o `Alt + P` funciona lá.
 - A janela flutuante pode ser redimensionada arrastando a borda.
 
 ### O que aparece na janela
 
 | Site | Conteúdo |
 |------|----------|
-| YouTube, Netflix, Prime Video, Disney+ e outros sites com vídeo | Só o vídeo, ocupando a janela inteira, com as legendas do site. Os controles aparecem ao mexer o mouse e somem sozinhos depois de 2 segundos: linha do tempo (clique ou arraste), ⏪ 10s, Play/Pausar, 10s ⏩, velocidade (1x a 2x) e volume (mudo + controle deslizante). Em sites de streaming, abra pelo botão da extensão ou pelo menu do botão direito. Teclas: espaço, ← →, ↑ ↓ (volume) e M (mudo). |
+| YouTube, Netflix, Prime Video, Disney+ e outros sites com vídeo | Só o vídeo, ocupando a janela inteira, com as legendas do site. Os controles aparecem ao mexer o mouse e somem sozinhos depois de 2 segundos: linha do tempo (clique ou arraste), ⏪ 10s, Play/Pausar, 10s ⏩, velocidade (1x a 2x) e volume (mudo + controle deslizante). Nos streamings ativados no menu, o ícone fica na barra do player, ao lado da tela cheia; em outros sites, um ícone aparece no canto do vídeo ao passar o mouse. Teclas: espaço, ← →, ↑ ↓ (volume) e M (mudo). |
 | YouTube Music | Mini player ("tela menor") com capa, faixa, artista, barra de progresso, volume, aleatório, anterior, play, próxima e repetir. Teclas: ↑ ↓ (volume) e M (mudo). |
 | Spotify Web | Mesmo mini player, controlando os botões do próprio Spotify (inclusive a barra de progresso). |
-| YouTube Shorts, TikTok e Reels do Instagram | Janela em pé (300×533) só com ▲ ▼ na lateral, volume no canto e uma linha fina de progresso. Também passa rolando ou arrastando na janela (↑ ↓ / Page Up / Page Down); clique no vídeo pausa. No menu: "Passar sozinho quando o vídeo acaba" e "Ativar Alt+P no TikTok e Instagram" (pede a permissão só desses dois sites). |
+| YouTube Shorts, TikTok e Reels do Instagram | Janela em pé (300×533) só com ▲ ▼ na lateral, volume no canto e uma linha fina de progresso. Também passa rolando ou arrastando na janela (↑ ↓ / Page Up / Page Down); clique no vídeo pausa. No menu: "Passar sozinho quando o vídeo acaba". No Instagram vale também para a página inicial; no perfil (grade de posts) a extensão fica desligada. O ícone de flutuar aparece no canto do vídeo ao passar o mouse. |
 | Streaming (Netflix, Prime Video, Disney+, Globoplay...) | Quando o site mostra "Pular abertura" ou "Próximo episódio", o botão aparece também na janela. Se o site cria outro vídeo para o próximo episódio, a janela passa a mostrar o novo. |
 
 Os botões de aleatório e repetir acionam os do próprio site e mostram o estado atual: ficam **azuis** quando ligados, e o ícone de repetir muda para 🔂 (com "1") quando está repetindo só a música atual. A ordem é desligado → repetir todas → repetir só esta.
@@ -54,14 +55,13 @@ Os botões de aleatório e repetir acionam os do próprio site e mostram o estad
 | Permissão | Para quê |
 |-----------|----------|
 | Acesso a youtube.com, music.youtube.com e open.spotify.com | Mostrar o botão Flutuar e o atalho Alt+P nesses sites. |
-| `activeTab` + `scripting` | Em qualquer outro site, carregar a extensão só na aba atual e só quando você usa o popup, o menu ou um atalho. |
+| `activeTab` + `scripting` | Em qualquer outro site, carregar a extensão só na aba atual e só quando você usa o menu do botão direito ou um atalho. |
 | `contextMenus` | Item "Abrir na janela flutuante" no botão direito. |
 | `storage` | Guardar suas preferências (tamanho da janela, auto-avançar) e quantas vezes a janela abriu (para o pedido de avaliação, uma vez só). |
-| tiktok.com e instagram.com (**opcional**) | Só se você ativar no menu: Alt+P e botão Flutuar nesses sites. Dá para desativar no mesmo lugar. |
+| Streamings, tiktok.com e instagram.com (**opcional**) | Só se você ativar no menu: ícone na barra do player e Alt+P nesses sites. Dá para desativar no mesmo lugar. |
 
 ## Limitações conhecidas
 
-- O "Abrir um link numa janela compacta" do popup abre o site numa janela pequena do navegador. Essa janela **não** fica sempre no topo; para isso, clique no botão azul que aparece nela.
 - Páginas internas do navegador (`chrome://`, loja de extensões) não aceitam extensões.
 - Vídeos dentro de iframes de outro domínio (por exemplo, um vídeo do YouTube incorporado num blog) não são detectados pelo botão Flutuar; abra o vídeo no próprio YouTube.
 

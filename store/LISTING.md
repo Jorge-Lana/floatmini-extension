@@ -48,19 +48,20 @@ O FloatMini coloca seus vídeos e músicas numa mini janela flutuante que fica S
 • As legendas do site vão junto para a janela
 • "Pular abertura" e "Próximo episódio" direto na janela
 • A janela acompanha o próximo episódio sozinha
-• Abra com Alt + Shift + P, pelo botão da extensão ou pelo menu do botão direito
+• Ícone na barra do player da Netflix, Prime Video, Disney+, Max e outros (ative no menu da extensão)
+• Ou abra com Alt + Shift + P ou pelo menu do botão direito
 
 📱 SHORTS, TIKTOK E REELS
 • Janela em pé, do tamanho certo para vídeos verticais
 • Setas na lateral para o vídeo anterior/próximo, volume no canto
 • Também passa rolando ou arrastando na janela (ou ↑ ↓); clique no vídeo pausa
 • Opção de passar sozinho quando o vídeo acaba, com linha fina de progresso
-• Alt + P no TikTok e no Instagram (ative no menu da extensão)
+• Alt + P e ícone no TikTok e no Instagram (ative no menu da extensão)
 
 ⚡ RÁPIDO DE USAR
 • Ícone integrado na barra do próprio player do YouTube e do YouTube Music
 • Atalho Alt + P no YouTube, YouTube Music e Spotify; Alt + Shift + P em qualquer site
-• Também pelo botão da extensão ou pelo menu do botão direito
+• Também pelo menu do botão direito
 • Ao fechar a janela, o vídeo volta para a página exatamente onde estava
 
 🔒 PRIVACIDADE
@@ -100,19 +101,20 @@ FloatMini puts your videos and music in a small floating window that stays ALWAY
 • The site's subtitles come along to the window
 • "Skip intro" and "Next episode" right in the window
 • The window follows the next episode on its own
-• Open it with Alt + Shift + P, the extension button or the right-click menu
+• Icon in the Netflix, Prime Video, Disney+, Max (and more) player bar — turn it on in the extension menu
+• Or open it with Alt + Shift + P or the right-click menu
 
 📱 SHORTS, TIKTOK AND REELS
 • Portrait window sized for vertical videos
 • Side arrows for previous/next video, volume in the corner
 • Scroll or drag in the window to swipe too (or ↑ ↓); click the video to pause
 • Option to auto-advance when the video ends, with a thin progress line
-• Alt + P on TikTok and Instagram (turn it on in the extension menu)
+• Alt + P and icon on TikTok and Instagram (turn it on in the extension menu)
 
 ⚡ QUICK TO USE
 • Icon built into the YouTube and YouTube Music player bar
 • Alt + P on YouTube, YouTube Music and Spotify; Alt + Shift + P on any site
-• Also from the extension button or the right-click menu
+• Also from the right-click menu
 • When you close the window, the video goes back to the page exactly where it was
 
 🔒 PRIVACY
@@ -138,7 +140,7 @@ Enjoying it? Support the project: buymeacoffee.com/jorgelana
 1. Vídeo do YouTube flutuando por cima de outro programa (editor de código ou planilha).
 2. Mini player do YouTube Music com capa, aleatório/repetir azuis e volume.
 3. Barra do player do YouTube com o ícone do FloatMini e a dica "Janela flutuante sempre no topo (Alt+P)".
-4. Popup da extensão aberto.
+4. Menu da extensão aberto.
 
 Use páginas e playlists neutras (sem nomes pessoais) nas capturas.
 

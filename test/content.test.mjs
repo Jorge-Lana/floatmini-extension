@@ -201,7 +201,9 @@ test('site sem vídeo responde no_media', async () => {
 test('injetar o script duas vezes não duplica nada', () => {
   const page = loadPage({ url: 'https://example.com/', html: '<video></video>' });
   page.window.eval(CONTENT_SRC);
-  assert.equal(page.document.querySelectorAll('#floatmini-trigger-btn').length, 1);
+  // Site sem barra de player reconhecível: ícone em cima do vídeo, não no canto.
+  assert.equal(page.document.querySelectorAll('#floatmini-video-btn').length, 1);
+  assert.equal(page.document.querySelectorAll('#floatmini-trigger-btn').length, 0);
   page.close();
 });
 
@@ -948,4 +950,80 @@ test('abrir a janela conta o uso (para o pedido de avaliação)', async () => {
   fakeDocumentPip(page.window);
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
   assert.equal(page.store.floatCount, 5);
+});
+
+
+test('Instagram: página inicial usa o layout de feed; perfil fica desligado', async () => {
+  const home = loadPage({ url: 'https://www.instagram.com/', html: '<article><video id="a"></video></article><article><img></article><article><video id="b"></video></article>', active: true });
+  const ma = fakeMedia(home.document.getElementById('a'), { duration: 30 });
+  const mb = fakeMedia(home.document.getElementById('b'), { duration: 30, paused: true });
+  // O Instagram dá play no vídeo que entra na tela.
+  home.document.getElementById('b').scrollIntoView = () => {
+    ma.paused = true;
+    mb.paused = false;
+  };
+  const docPip = fakeDocumentPip(home.window);
+  assert.equal(await home.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  assert.ok(pipDoc.body.classList.contains('fm-feed'));
+  [...pipDoc.querySelectorAll('.fm-feed-nav .fm-btn')][1].click();
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(pipDoc.querySelector('.fm-stage video').id, 'b', 'pulou a foto e foi para o próximo vídeo');
+
+  const profile = loadPage({ url: 'https://www.instagram.com/alguem/', html: '<video></video>', active: true });
+  fakeMedia(profile.document.querySelector('video'));
+  fakeDocumentPip(profile.window);
+  assert.equal(await profile.send({ action: 'TOGGLE_FLOAT' }), 'no_media');
+  assert.equal(profile.document.getElementById('floatmini-trigger-btn'), null, 'sem botão no canto');
+});
+
+test('streaming: ícone entra na barra do player, ao lado da tela cheia (sem botão no canto)', async () => {
+  const html = `<div class="player"><video></video><div class="bar"><button aria-label="Volume"></button><button aria-label="Tela cheia" id="fs"></button></div></div>`;
+  const page = loadPage({ url: 'https://play.hbomax.com/video/1', html });
+  fakeMedia(page.document.querySelector('video'));
+  await new Promise((r) => setTimeout(r, 50));
+  const btn = page.document.getElementById('floatmini-native-btn');
+  assert.ok(btn, 'ícone na barra');
+  assert.equal(btn.nextElementSibling.id, 'fs');
+  assert.equal(page.document.getElementById('floatmini-trigger-btn'), null);
+});
+
+test('TikTok/Instagram: sem botão fixo no canto (só o ícone em cima do vídeo)', async () => {
+  const page = loadPage({ url: 'https://www.instagram.com/reels/abc/', html: '<video></video>' });
+  fakeMedia(page.document.querySelector('video'));
+  await new Promise((r) => setTimeout(r, 50));
+  assert.equal(page.document.getElementById('floatmini-trigger-btn'), null);
+  assert.ok(page.document.getElementById('floatmini-video-btn'), 'ícone pronto para aparecer em cima do vídeo');
+});
+
+
+test('TikTok: a janela mostra um espelho do vídeo e o original fica na página', async () => {
+  const html = `<div id="feed"><div class="item"><video id="v1"></video></div><div class="item"><video id="v2"></video></div></div>
+    <button data-e2e="arrow-down">↓</button>`;
+  const page = loadPage({ url: 'https://www.tiktok.com/foryou', html, active: true });
+  const v1 = page.document.getElementById('v1');
+  const v2 = page.document.getElementById('v2');
+  const m1 = fakeMedia(v1, { duration: 20 });
+  const m2 = fakeMedia(v2, { duration: 15, paused: true });
+  v1.captureStream = () => ({ id: 'stream-1' });
+  v2.captureStream = () => ({ id: 'stream-2' });
+  page.document.querySelector('[data-e2e="arrow-down"]').addEventListener('click', () => {
+    m1.paused = true;
+    m2.paused = false;
+  });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  const mirror = pipDoc.querySelector('.fm-stage video.fm-mirror');
+  assert.ok(mirror, 'espelho na janela');
+  assert.equal(mirror.srcObject.id, 'stream-1');
+  assert.equal(mirror.muted, true, 'som continua saindo do vídeo original');
+  assert.equal(v1.ownerDocument, page.document, 'o vídeo original não sai da página');
+
+  [...pipDoc.querySelectorAll('.fm-feed-nav .fm-btn')][1].click();
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(mirror.srcObject.id, 'stream-2', 'espelho troca para o próximo vídeo');
+  assert.equal(pipDoc.querySelectorAll('.fm-stage video').length, 1);
+  docPip.window.close();
+  assert.equal(mirror.srcObject, null);
 });
