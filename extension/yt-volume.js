@@ -67,7 +67,11 @@
   function report() {
     const p = player();
     if (!p || typeof p.getVolume !== 'function') return;
-    const detail = JSON.stringify({ percent: p.getVolume(), muted: !!p.isMuted?.() });
+    // Tempo da música/vídeo atual pela API do player (o <video> do YouTube
+    // Music pode continuar contando o tempo da faixa anterior).
+    const current = typeof p.getCurrentTime === 'function' ? p.getCurrentTime() : null;
+    const total = typeof p.getDuration === 'function' ? p.getDuration() : null;
+    const detail = JSON.stringify({ percent: p.getVolume(), muted: !!p.isMuted?.(), current, total });
     if (detail === lastReport && Date.now() - lastReportAt < 2000) return;
     lastReport = detail;
     lastReportAt = Date.now();
@@ -137,6 +141,18 @@
     siteChanged();
     report();
   }, 700);
+
+  // Ir para um ponto da música/vídeo atual (segundos) pela API do player.
+  document.addEventListener('floatmini:seek-player', (event) => {
+    try {
+      const { time } = JSON.parse(event.detail);
+      const p = player();
+      if (p && typeof p.seekTo === 'function' && Number.isFinite(time)) p.seekTo(Math.max(0, time), true);
+      report();
+    } catch {
+      /* ignora */
+    }
+  });
 
   document.addEventListener('floatmini:volume', (event) => {
     let req;

@@ -402,13 +402,24 @@
   // progresso do site). É a fonte certa: com a reprodução sem pausa entre
   // faixas, o <video> continua contando o tempo da música anterior.
   function ytMusicClock() {
+    // 1º: API do player (a mais certa), informada pelo yt-volume.js.
+    if (playerClock && Date.now() - playerClock.at < 2500) {
+      const elapsed = (Date.now() - playerClock.at) / 1000;
+      const playing = findYtMusicMedia()?.paused === false;
+      return { current: Math.min(playerClock.total, playerClock.current + (playing ? elapsed : 0)), total: playerClock.total };
+    }
     const root = findYtMusicBar();
     const slider = deep$('#progress-bar');
     const now = Number(slider?.getAttribute('aria-valuenow'));
     const max = Number(slider?.getAttribute('aria-valuemax'));
     if (Number.isFinite(now) && max > 0) return { current: now, total: max };
     const text = (root && deep$('.ytMusicMiniPlayerTimeInfo, .time-info', root)?.textContent) || '';
-    const m = text.match(/(\d+(?::\d+)+)\s*\/\s*(\d+(?::\d+)+)/);
+    let m = text.match(/(\d+(?::\d+)+)\s*\/\s*(\d+(?::\d+)+)/);
+    // Layouts novos: procura o "0:05 / 3:31" em qualquer texto da barra.
+    if (!m && root) {
+      const node = deepAll('span, div, yt-formatted-string', root).find((n) => n.childElementCount === 0 && /^\s*\d+(:\d+)+\s*\/\s*\d+(:\d+)+\s*$/.test(n.textContent || ''));
+      m = node?.textContent.match(/(\d+(?::\d+)+)\s*\/\s*(\d+(?::\d+)+)/) || null;
+    }
     if (!m) return null;
     const current = parseClock(m[1]);
     const total = parseClock(m[2]);
@@ -452,9 +463,15 @@
         return v ? { current: v.currentTime, total: v.duration } : null;
       },
       seek: (fraction) => {
+        const clock = ytMusicClock();
+        if (playerClock && clock) {
+          // Pela API do player: sempre relativo à música atual.
+          const detail = JSON.stringify({ time: fraction * clock.total });
+          document.dispatchEvent(new CustomEvent('floatmini:seek-player', { detail }));
+          return;
+        }
         const v = findMainVideo();
         if (!v) return;
-        const clock = ytMusicClock();
         if (clock) {
           // O <video> pode ter as músicas anteriores no começo: desloca a
           // partir do início da música atual.
@@ -1232,11 +1249,13 @@
   // <video> fica mais baixo por causa da normalização de volume do YouTube,
   // então o controle da janela segue o player, não o <video>.
   let playerVolume = null; // { volume, muted, at }
+  let playerClock = null; // { current, total, at } — tempo pela API do player
   document.addEventListener('floatmini:volume-state', (event) => {
     try {
       const state = JSON.parse(event.detail);
       if (typeof state.percent !== 'number') return;
       playerVolume = { volume: Math.min(1, Math.max(0, state.percent / 100)), muted: !!state.muted, at: Date.now() };
+      playerClock = Number(state.total) > 0 ? { current: Number(state.current) || 0, total: Number(state.total), at: Date.now() } : null;
     } catch {
       /* ignora */
     }

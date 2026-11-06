@@ -1027,3 +1027,30 @@ test('TikTok: a janela mostra um espelho do vídeo e o original fica na página'
   docPip.window.close();
   assert.equal(mirror.srcObject, null);
 });
+
+test('YouTube Music: barra e clique usam o tempo da API do player', async () => {
+  const html = YTM_MINIPLAYER.replace('0:47 / 3:12', '') + '<video class="html5-main-video"></video>';
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html, active: true });
+  fakeMedia(page.document.querySelector('video'), { duration: 400, currentTime: 380 }); // tempo errado do <video>
+  page.document.dispatchEvent(new page.window.CustomEvent('floatmini:volume-state', { detail: JSON.stringify({ percent: 50, muted: false, current: 5, total: 211 }) }));
+  const seeks = [];
+  page.document.addEventListener('floatmini:seek-player', (e) => seeks.push(JSON.parse(e.detail).time));
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  const width = parseFloat(pipDoc.querySelector('.fm-bar').style.width);
+  assert.ok(width < 5, `barra no começo da música (${width}%)`);
+  pipDoc.querySelector('.fm-progress').getBoundingClientRect = () => ({ left: 0, width: 200, top: 0, height: 3 });
+  pipDoc.querySelector('.fm-seek').dispatchEvent(new docPip.window.MouseEvent('pointerdown', { clientX: 100, bubbles: true }));
+  assert.equal(seeks.at(-1), 105.5);
+});
+
+test('YouTube Music: lê "0:05 / 3:31" de qualquer texto da barra', async () => {
+  const html = '<ytmusic-player-bar><div class="ytmusicPlayerBarRight"><span class="ytmusicTime">0:05 / 3:31</span></div><div class="title">X</div></ytmusic-player-bar><video class="html5-main-video"></video>';
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html, active: true });
+  fakeMedia(page.document.querySelector('video'), { duration: 400, currentTime: 380 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const width = parseFloat(docPip.window.document.querySelector('.fm-bar').style.width);
+  assert.ok(Math.abs(width - (5 / 211) * 100) < 0.5, `barra pelo texto do site (${width}%)`);
+});
