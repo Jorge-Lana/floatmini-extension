@@ -1,0 +1,16 @@
+# Abre PRs sozinho quando sai atualização de dependências (npm) e das Actions.
+# Com a proteção da main, só entram depois que o CI passar.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      dependencias:
+        patterns: ['*']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

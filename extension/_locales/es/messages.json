@@ -1,0 +1,17 @@
+{
+  "extName": {
+    "message": "FloatMini - Ventana Flotante Siempre Visible"
+  },
+  "extDescription": {
+    "message": "Mini ventana flotante siempre visible para YouTube, YouTube Music, Spotify y videos web."
+  },
+  "actionTitle": {
+    "message": "FloatMini - Ventana flotante siempre visible"
+  },
+  "commandToggle": {
+    "message": "Abrir/cerrar la ventana flotante en cualquier sitio"
+  },
+  "menuOpen": {
+    "message": "Abrir en la ventana flotante (FloatMini)"
+  }
+}

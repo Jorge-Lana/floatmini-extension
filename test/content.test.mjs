@@ -13,7 +13,7 @@ const openWindows = [];
 afterEach(() => openWindows.splice(0).forEach((w) => w.close()));
 
 /** Cria uma página falsa, injeta o content script e devolve utilidades de teste. */
-function loadPage({ url, html, active = false, storage = {} }) {
+function loadPage({ url, html, active = false, storage = {}, lang = null }) {
   const source = CONTENT_SRC;
   const dom = new JSDOM(`<!doctype html><html><head><title>Página</title></head><body>${html}</body></html>`, {
     url,
@@ -34,6 +34,7 @@ function loadPage({ url, html, active = false, storage = {} }) {
   const store = { ...storage };
   let onMessage = null;
   window.chrome = {
+    ...(lang ? { i18n: { getUILanguage: () => lang } } : {}),
     runtime: { onMessage: { addListener: (fn) => (onMessage = fn) } },
     storage: {
       local: {
@@ -73,7 +74,8 @@ function fakeMedia(video, { duration = 30, currentTime = 0, paused = false, mute
 function fakeDocumentPip(window) {
   const api = {
     window: null,
-    requestWindow: async () => {
+    requestWindow: async (options) => {
+      api.lastRequest = options;
       const pip = new JSDOM('<!doctype html><html><head></head><body></body></html>', { pretendToBeVisual: true }).window;
       api.window = pip;
       pip.close = () => {
@@ -814,6 +816,7 @@ test('feed (TikTok/Reels/Shorts): só setas na lateral e volume; clique pausa', 
   const stage = pipDoc.querySelector('.fm-stage');
   stage.dispatchEvent(new docPip.window.MouseEvent('pointerdown', { clientX: 50, clientY: 50, bubbles: true }));
   stage.dispatchEvent(new docPip.window.MouseEvent('pointerup', { clientX: 51, clientY: 50, bubbles: true }));
+  await new Promise((r) => setTimeout(r, 400));
   assert.equal(media.paused, true, 'clique no vídeo pausa');
 });
 
@@ -1081,4 +1084,100 @@ test('streaming: o botão da janela copia o visual do botão do site', async () 
   assert.equal(btn.style.backgroundColor, 'rgb(255, 255, 255)');
   assert.equal(btn.style.color, 'rgb(0, 0, 0)');
   assert.equal(btn.style.borderRadius, '4px');
+});
+
+test('3.1: título do episódio no streaming, A−/A+ da legenda e tamanho lembrado', async () => {
+  const html = `<div class="watch-video"><video></video><div data-uia="video-title"><h4>Série X</h4><span>T1:E3</span><span>A Viagem</span></div>
+    <div class="player-timedtext"><div class="player-timedtext-text-container"></div></div></div>`;
+  const page = loadPage({ url: 'https://www.netflix.com/watch/1', html, active: true, storage: { captionScale: { 'www.netflix.com': 1.3 }, windowSizes: { video: { width: 640, height: 360 } } } });
+  fakeMedia(page.document.querySelector('video'), { duration: 2400 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  assert.equal(`${docPip.lastRequest.width}x${docPip.lastRequest.height}`, '640x360', 'abre no último tamanho');
+  const pipDoc = docPip.window.document;
+  await new Promise((r) => setTimeout(r, 700));
+  assert.equal(pipDoc.querySelector('.fm-title').textContent, 'Série X · T1:E3 · A Viagem');
+  assert.equal(pipDoc.body.style.getPropertyValue('--fm-cap'), '1.3');
+  page.document.querySelector('.player-timedtext-text-container').textContent = 'Oi';
+  await new Promise((r) => setTimeout(r, 300));
+  assert.ok(pipDoc.body.classList.contains('fm-has-cc'));
+  [...pipDoc.querySelectorAll('.fm-cc')].find((b) => b.title === 'Legenda maior').click();
+  assert.equal(page.store.captionScale['www.netflix.com'], 1.45);
+});
+
+
+test('feed: dois cliques no vídeo curtem pelo botão do site (sem descurtir)', async () => {
+  const html = `<div class="reel"><div><video></video></div><button aria-label="Curtir"><svg aria-label="Curtir"></svg></button></div>`;
+  const page = loadPage({ url: 'https://www.instagram.com/reels/abc/', html, active: true });
+  const media = fakeMedia(page.document.querySelector('video'), { duration: 20 });
+  let likes = 0;
+  page.document.querySelector('button[aria-label="Curtir"]').addEventListener('click', () => likes++);
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  const stage = pipDoc.querySelector('.fm-stage');
+  const tap = () => {
+    stage.dispatchEvent(new docPip.window.MouseEvent('pointerdown', { clientX: 50, clientY: 50, bubbles: true }));
+    stage.dispatchEvent(new docPip.window.MouseEvent('pointerup', { clientX: 50, clientY: 50, bubbles: true }));
+  };
+  tap();
+  tap();
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(likes, 1);
+  assert.equal(media.paused, false, 'dois cliques não pausam');
+  assert.ok(pipDoc.querySelector('.fm-heart'));
+
+  // Já curtido: não clica (não descurte).
+  page.document.querySelector('button').setAttribute('aria-label', 'Descurtir');
+  page.document.querySelector('svg').setAttribute('aria-label', 'Descurtir');
+  tap();
+  tap();
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(likes, 1);
+});
+
+test('YouTube Music: "A seguir" com a próxima música nos últimos segundos', async () => {
+  const queue = `<ytmusic-player-queue-item selected><div class="song-title">Agora</div><div class="byline">Banda A</div></ytmusic-player-queue-item>
+    <ytmusic-player-queue-item><div class="song-title">Próxima Música</div><div class="byline">Banda B</div></ytmusic-player-queue-item>`;
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html: YTM_MINIPLAYER.replace('0:47 / 3:12', '') + queue + '<video></video>', active: true });
+  const media = fakeMedia(page.document.querySelector('video'), { duration: 200, currentTime: 50 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  assert.equal(pipDoc.querySelector('.fm-upnext').textContent, '');
+  media.currentTime = 190;
+  await new Promise((r) => setTimeout(r, 1100));
+  assert.equal(pipDoc.querySelector('.fm-upnext').textContent, 'A seguir: Próxima Música · Banda B');
+});
+
+test('SoundCloud: mini player com os botões do site', async () => {
+  const html = `<div class="playControls"><button class="skipControl__previous"></button><button class="playControls__play playing"></button><button class="skipControl__next"></button>
+    <button class="shuffleControl m-shuffling"></button><button class="repeatControl m-one"></button>
+    <div class="playbackTimeline__timePassed"><span aria-hidden="true">1:00</span></div><div class="playbackTimeline__duration"><span aria-hidden="true">4:00</span></div>
+    <a class="playbackSoundBadge__titleLink" title="Faixa SC">Faixa SC</a><a class="playbackSoundBadge__lightLink" title="Artista SC">Artista SC</a></div>`;
+  const page = loadPage({ url: 'https://soundcloud.com/discover', html, active: true });
+  let nexts = 0;
+  page.document.querySelector('.skipControl__next').addEventListener('click', () => nexts++);
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  assert.equal(pipDoc.querySelector('.fm-track').textContent, 'Faixa SC');
+  assert.equal(pipDoc.querySelector('.fm-artist').textContent, 'Artista SC');
+  assert.equal(pipDoc.querySelector('.fm-bar').style.width, '25%');
+  assert.equal(pipDoc.querySelector('.fm-primary').dataset.icon, 'pause');
+  [...pipDoc.querySelectorAll('.fm-btn')].find((b) => b.title === 'Próxima').click();
+  assert.equal(nexts, 1);
+  assert.equal(pipDoc.querySelector('[data-mode]').dataset.mode, 'one');
+});
+
+
+test('janela em inglês e espanhol conforme o idioma do navegador', async () => {
+  for (const [lang, next] of [['en-US', 'Forward 10 seconds (→)'], ['es-419', 'Adelante 10 segundos (→)']]) {
+    const page = loadPage({ url: 'https://www.youtube.com/watch?v=a', html: YT_HTML, active: true, lang });
+    fakeMedia(page.document.querySelector('video'));
+    const docPip = fakeDocumentPip(page.window);
+    assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+    const titles = [...docPip.window.document.querySelectorAll('.fm-btn')].map((b) => b.title);
+    assert.ok(titles.includes(next), `${lang}: ${titles.join(' | ')}`);
+  }
 });

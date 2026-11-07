@@ -14,6 +14,8 @@ export const EXTRA_ORIGINS = [
   'https://www.crunchyroll.com/*',
   'https://www.paramountplus.com/*',
   'https://tv.apple.com/*',
+  'https://soundcloud.com/*',
+  'https://www.deezer.com/*',
   'https://www.tiktok.com/*',
   'https://www.instagram.com/*'
 ];
