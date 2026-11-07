@@ -915,7 +915,7 @@ test('streaming: "Pular abertura" do site aparece na janela e clica no botão do
 test('streaming: "Próximo episódio" pelo texto, em qualquer site; anúncio do YouTube nunca', async () => {
   const html = `<div><video></video></div><div role="button" aria-label="Próximo episódio"><span>Próximo episódio</span></div>`;
   const page = loadPage({ url: 'https://globoplay.globo.com/v/1/', html, active: true });
-  fakeMedia(page.document.querySelector('video'), { duration: 3000 });
+  fakeMedia(page.document.querySelector('video'), { duration: 3000, currentTime: 2950 }); // fim do episódio
   const docPip = fakeDocumentPip(page.window);
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
   await new Promise((r) => setTimeout(r, 700));
@@ -1053,4 +1053,32 @@ test('YouTube Music: lê "0:05 / 3:31" de qualquer texto da barra', async () => 
   assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
   const width = parseFloat(docPip.window.document.querySelector('.fm-bar').style.width);
   assert.ok(Math.abs(width - (5 / 211) * 100) < 0.5, `barra pelo texto do site (${width}%)`);
+});
+
+
+test('Netflix: botão "Próximo episódio" da barra não aparece no começo do episódio', async () => {
+  const html = `<div class="watch-video"><video></video><button data-uia="control-next" aria-label="Próximo episódio"></button></div>`;
+  const page = loadPage({ url: 'https://www.netflix.com/watch/1', html, active: true });
+  const media = fakeMedia(page.document.querySelector('video'), { duration: 2400, currentTime: 30 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  await new Promise((r) => setTimeout(r, 700));
+  const btn = docPip.window.document.querySelector('.fm-site-action');
+  assert.equal(btn.hidden, true, 'começo do episódio: nada');
+  media.currentTime = 2350; // créditos
+  await new Promise((r) => setTimeout(r, 700));
+  assert.equal(btn.hidden, false);
+});
+
+test('streaming: o botão da janela copia o visual do botão do site', async () => {
+  const html = `<div class="watch-video"><video></video><button data-uia="player-skip-intro" style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0); border-radius: 4px">Pular abertura</button></div>`;
+  const page = loadPage({ url: 'https://www.netflix.com/watch/1', html, active: true });
+  fakeMedia(page.document.querySelector('video'), { duration: 2400 });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  await new Promise((r) => setTimeout(r, 700));
+  const btn = docPip.window.document.querySelector('.fm-site-action');
+  assert.equal(btn.style.backgroundColor, 'rgb(255, 255, 255)');
+  assert.equal(btn.style.color, 'rgb(0, 0, 0)');
+  assert.equal(btn.style.borderRadius, '4px');
 });

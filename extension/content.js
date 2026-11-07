@@ -771,9 +771,14 @@
   const NEXT_TEXT = /(pr[óo]ximo\s+epis[óo]dio|next\s+episode|assistir\s+(o\s+)?pr[óo]ximo|pr[óo]ximo\s+ep\b)/i;
   const ACTION_LABEL = { skip: 'Pular abertura', next: 'Próximo episódio' };
 
-  function findSiteAction() {
+  // "Próximo episódio" pelo texto só vale perto do fim: o botão de próximo
+  // episódio da barra do player (ex.: Netflix) fica lá o episódio inteiro.
+  const NEXT_TEXT_LAST_SECONDS = 120;
+
+  function findSiteAction(video) {
     // YouTube fica de fora (não tem abertura; e "pular" lá é anúncio).
     if (SITE !== 'other' && SITE !== 'netflix') return null;
+    const nearEnd = !!video && (video.ended || (video.duration > 0 && video.duration - video.currentTime <= NEXT_TEXT_LAST_SECONDS));
     for (const { kind, selector } of SITE_ACTIONS) {
       const node = [...document.querySelectorAll(selector)].find(isVisible);
       if (node) return { kind, node, label: shortLabel(nodeText(node), kind) };
@@ -781,10 +786,37 @@
     for (const node of document.querySelectorAll('button, [role="button"], a')) {
       const text = `${nodeText(node)} ${node.getAttribute('aria-label') || ''}`;
       if (text.length > 80 || /an[úu]ncio|\bads?\b/i.test(text)) continue;
-      const kind = SKIP_TEXT.test(text) ? 'skip' : NEXT_TEXT.test(text) ? 'next' : null;
+      const kind = SKIP_TEXT.test(text) ? 'skip' : NEXT_TEXT.test(text) && nearEnd ? 'next' : null;
       if (kind && isVisible(node)) return { kind, node, label: shortLabel(nodeText(node), kind) };
     }
     return null;
+  }
+
+  // O botão da janela copia o visual do botão do site (cor, borda, cantos,
+  // fonte), para parecer o do streaming que a pessoa está usando.
+  const SITE_STYLE_PROPS = ['backgroundColor', 'color', 'borderRadius', 'borderTop', 'borderRight', 'borderBottom', 'borderLeft', 'fontWeight', 'fontFamily', 'textTransform', 'letterSpacing'];
+  const isClear = (color) => !color || color === 'transparent' || /rgba\([^)]*,\s*0\)$/.test(color);
+
+  function copySiteStyle(btn, node) {
+    for (const prop of SITE_STYLE_PROPS) btn.style[prop] = '';
+    if (!node) return;
+    // O fundo pode estar num filho (ex.: <button><div class="fundo">).
+    let source = node;
+    let style = getComputedStyle(node);
+    if (isClear(style.backgroundColor)) {
+      const child = [...node.querySelectorAll('*')].find((c) => !isClear(getComputedStyle(c).backgroundColor));
+      if (child) {
+        source = child;
+        style = getComputedStyle(child);
+      }
+    }
+    if (isClear(style.backgroundColor) && !parseFloat(style.borderTopWidth)) return; // sem visual próprio: fica o padrão
+    for (const prop of SITE_STYLE_PROPS) {
+      const value = (source === node ? style : getComputedStyle(source))[prop];
+      if (value) btn.style[prop] = value;
+    }
+    const text = getComputedStyle(node).color;
+    if (!isClear(text) && source !== node) btn.style.color = text;
   }
 
   function shortLabel(text, kind) {
@@ -1002,9 +1034,13 @@
       const text = readSiteCaptions(video, placeholder || originalParent, readNearby);
       if (captions.textContent !== text) captions.textContent = text;
       if (++tick % 3) return; // o resto, a cada ~600 ms
-      siteAction = Date.now() < siteActionPausedUntil ? null : findSiteAction();
+      const previousNode = siteAction?.node;
+      siteAction = Date.now() < siteActionPausedUntil ? null : findSiteAction(video);
       siteActionBtn.hidden = !siteAction;
-      if (siteAction) siteActionBtn.textContent = `${siteAction.label} ›`;
+      if (siteAction) {
+        siteActionBtn.textContent = `${siteAction.label} ›`;
+        if (siteAction.node !== previousNode) copySiteStyle(siteActionBtn, siteAction.node);
+      }
       followNewEpisode();
     }, 200);
 
