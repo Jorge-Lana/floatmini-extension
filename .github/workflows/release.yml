@@ -33,7 +33,7 @@ jobs:
       AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Versão nova?
         id: version
