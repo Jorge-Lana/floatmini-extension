@@ -97,7 +97,10 @@ if (POPUP_I18N[LANG]) {
   document.documentElement.lang = LANG;
   for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = T(node.dataset.i18n);
   // Textos fixos da própria extensão (com <kbd>/<svg>), nunca vindos de fora.
-  for (const node of document.querySelectorAll('[data-i18n-html]')) node.innerHTML = T(node.dataset.i18nHtml);
+  for (const node of document.querySelectorAll('[data-i18n-html]')) {
+    const parsed = new DOMParser().parseFromString(`<body>${T(node.dataset.i18nHtml)}</body>`, 'text/html');
+    node.replaceChildren(...parsed.body.childNodes);
+  }
   for (const node of document.querySelectorAll('[data-i18n-title]')) node.title = T(node.dataset.i18nTitle);
 }
 

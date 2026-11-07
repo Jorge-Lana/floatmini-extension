@@ -42,6 +42,8 @@ O FloatMini coloca seus vídeos e músicas numa mini janela flutuante que fica S
 • Anterior, play/pausa, próxima, aleatório e repetir (todas / só esta)
 • Os botões mostram o estado atual, igual ao player do site
 • Volume com botão de mudo
+• "A seguir" mostra a próxima música no fim da faixa
+• Também no SoundCloud e no Deezer (ative no menu da extensão)
 
 🎬 SITES DE STREAMING E OUTROS VÍDEOS
 • O vídeo em janela flutuante com linha do tempo, ±10 s, velocidade e volume
@@ -95,6 +97,8 @@ FloatMini puts your videos and music in a small floating window that stays ALWAY
 • Previous, play/pause, next, shuffle and repeat (all / one)
 • Buttons show the current state, just like the site's player
 • Volume with mute button
+• "Up next" shows the next song at the end of the track
+• Also on SoundCloud and Deezer (turn it on in the extension menu)
 
 🎬 STREAMING SITES AND OTHER VIDEOS
 • The video in a floating window with timeline, ±10 s, speed and volume
