@@ -12,12 +12,118 @@ try {
   /* fora da extensão (prévia) */
 }
 
-const STATUS_TEXT = {
-  needs_click: 'Clique no botão azul que apareceu na página para abrir a janela.',
-  no_media: 'Nenhum vídeo encontrado nesta aba.',
-  failed: 'O navegador não permitiu abrir a janela flutuante nesta página.',
-  not_found: 'Esse controle não existe nesta página.'
+// --- Idiomas (pt é o padrão do HTML; en e es trocam os textos) -----------------
+const POPUP_I18N = {
+  en: {
+    sub: 'Always-on-top floating window',
+    hint: 'To float: the <svg class="inline-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg> icon in the player bar, <kbd>Alt</kbd> <kbd>P</kbd> on the page, <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>P</kbd> on any site or right-click → <em>Open in floating window</em>.',
+    quick: 'Quick controls',
+    back10: 'Back 10 seconds',
+    fwd10: 'Forward 10 seconds',
+    shuffleTip: 'Shuffle (YT Music, Spotify, YouTube playlists)',
+    shuffle: 'Shuffle',
+    repeatTip: "Cycles the site's repeat modes",
+    repeat: 'Repeat',
+    size: 'Video window size',
+    autoTip: 'Last size used',
+    medium: 'Medium',
+    large: 'Large',
+    autoAdvance: 'Auto-advance when the video ends',
+    extraTitle: 'More sites',
+    extraText: 'Player-bar icon and <kbd>Alt</kbd> <kbd>P</kbd> also on streaming and music sites, TikTok and Instagram.',
+    rateQ: 'Enjoying FloatMini?',
+    rateLink: 'Rate it ★',
+    rateClose: "Don't show again",
+    openSource: 'Open source',
+    report: 'Report a problem',
+    supportTip: 'Support FloatMini on Buy Me a Coffee',
+    support: 'Support the project',
+    enable: 'Enable',
+    enabled: 'On ✓',
+    enableTip: 'The browser will ask permission only for these sites',
+    disableTip: 'Click to turn off on these sites',
+    readyReload: 'Done! Reload the site tab to see the icon.',
+    permError: 'Could not change the permission.'
+  },
+  es: {
+    sub: 'Ventana flotante siempre visible',
+    hint: 'Para flotar: el ícono <svg class="inline-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg> en la barra del reproductor, <kbd>Alt</kbd> <kbd>P</kbd> en la página, <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>P</kbd> en cualquier sitio o clic derecho → <em>Abrir en la ventana flotante</em>.',
+    quick: 'Controles rápidos',
+    back10: 'Atrás 10 segundos',
+    fwd10: 'Adelante 10 segundos',
+    shuffleTip: 'Aleatorio (YT Music, Spotify, listas de YouTube)',
+    shuffle: 'Aleatorio',
+    repeatTip: 'Alterna los modos de repetición del sitio',
+    repeat: 'Repetir',
+    size: 'Tamaño de la ventana de video',
+    autoTip: 'Último tamaño usado',
+    medium: 'Mediano',
+    large: 'Grande',
+    autoAdvance: 'Pasar solo cuando el video termina',
+    extraTitle: 'Más sitios',
+    extraText: 'Ícono en la barra del reproductor y <kbd>Alt</kbd> <kbd>P</kbd> también en sitios de streaming y de música, TikTok e Instagram.',
+    rateQ: '¿Te gusta FloatMini?',
+    rateLink: 'Califícalo ★',
+    rateClose: 'No mostrar de nuevo',
+    openSource: 'Código abierto',
+    report: 'Reportar un problema',
+    supportTip: 'Apoya FloatMini en Buy Me a Coffee',
+    support: 'Apoya el proyecto',
+    enable: 'Activar',
+    enabled: 'Activo ✓',
+    enableTip: 'El navegador pedirá permiso solo para estos sitios',
+    disableTip: 'Haz clic para desactivar en estos sitios',
+    readyReload: '¡Listo! Recarga la pestaña del sitio para ver el ícono.',
+    permError: 'No se pudo cambiar el permiso.'
+  }
 };
+const PT_TEXT = {
+  enable: 'Ativar',
+  enabled: 'Ativo ✓',
+  enableTip: 'O navegador vai pedir permissão só para esses sites',
+  disableTip: 'Clique para desativar nesses sites',
+  readyReload: 'Pronto! Recarregue a aba do site para o ícone aparecer.',
+  permError: 'Não foi possível mudar a permissão.'
+};
+const LANG = (() => {
+  try {
+    return (chrome.i18n?.getUILanguage?.() || 'pt').slice(0, 2).toLowerCase();
+  } catch {
+    return 'pt';
+  }
+})();
+const T = (key) => POPUP_I18N[LANG]?.[key] ?? PT_TEXT[key] ?? key;
+if (POPUP_I18N[LANG]) {
+  document.documentElement.lang = LANG;
+  for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = T(node.dataset.i18n);
+  // Textos fixos da própria extensão (com <kbd>/<svg>), nunca vindos de fora.
+  for (const node of document.querySelectorAll('[data-i18n-html]')) {
+    const parsed = new DOMParser().parseFromString(`<body>${T(node.dataset.i18nHtml)}</body>`, 'text/html');
+    node.replaceChildren(...parsed.body.childNodes);
+  }
+  for (const node of document.querySelectorAll('[data-i18n-title]')) node.title = T(node.dataset.i18nTitle);
+}
+
+const STATUS_TEXT = {
+  pt: {
+    needs_click: 'Clique no botão azul que apareceu na página para abrir a janela.',
+    no_media: 'Nenhum vídeo encontrado nesta aba.',
+    failed: 'O navegador não permitiu abrir a janela flutuante nesta página.',
+    not_found: 'Esse controle não existe nesta página.'
+  },
+  en: {
+    needs_click: 'Click the blue button on the page to open the window.',
+    no_media: 'No video found in this tab.',
+    failed: 'The browser did not allow the floating window on this page.',
+    not_found: "This control doesn't exist on this page."
+  },
+  es: {
+    needs_click: 'Haz clic en el botón azul de la página para abrir la ventana.',
+    no_media: 'No se encontró ningún video en esta pestaña.',
+    failed: 'El navegador no permitió abrir la ventana flotante en esta página.',
+    not_found: 'Este control no existe en esta página.'
+  }
+}[POPUP_I18N[LANG] ? LANG : 'pt'];
 
 function showStatus(text, kind = 'info') {
   statusEl.textContent = text;
@@ -91,8 +197,8 @@ feedAuto.addEventListener('change', () => chrome.storage.local.set({ feedAutoAdv
 const extraPerm = $('extra-perm');
 function renderExtraPerm(granted) {
   extraPerm.dataset.on = String(granted);
-  extraPerm.textContent = granted ? 'Ativo ✓' : 'Ativar';
-  extraPerm.title = granted ? 'Clique para desativar nesses sites' : 'O navegador vai pedir permissão só para esses sites';
+  extraPerm.textContent = granted ? T('enabled') : T('enable');
+  extraPerm.title = granted ? T('disableTip') : T('enableTip');
 }
 hasExtraPermission().then(renderExtraPerm);
 extraPerm.addEventListener('click', async () => {
@@ -104,9 +210,9 @@ extraPerm.addEventListener('click', async () => {
       await chrome.permissions.request({ origins: EXTRA_ORIGINS });
     }
     renderExtraPerm(await syncExtraScripts());
-    if (extraPerm.dataset.on === 'true') showStatus('Pronto! Recarregue a aba do site para o ícone aparecer.', 'ok');
+    if (extraPerm.dataset.on === 'true') showStatus(T('readyReload'), 'ok');
   } catch {
-    showStatus('Não foi possível mudar a permissão.', 'error');
+    showStatus(T('permError'), 'error');
   }
 });
 

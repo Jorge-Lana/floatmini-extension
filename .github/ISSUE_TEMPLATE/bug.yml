@@ -1,0 +1,37 @@
+name: Relatar problema
+description: Algo não funcionou como deveria no FloatMini
+labels: [bug]
+body:
+  - type: input
+    id: site
+    attributes:
+      label: Site
+      description: Onde aconteceu (ex.: YouTube Music, Netflix, TikTok)
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Navegador
+      options: [Chrome, Edge, Brave, Opera, Firefox, Outro]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versão do FloatMini
+      description: Em chrome://extensions ou about:addons
+      placeholder: '3.1.0'
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: O que aconteceu e o que você esperava
+    validations:
+      required: true
+  - type: textarea
+    id: print
+    attributes:
+      label: Print
+      description: Arraste um print da janela flutuante. Se for legenda ou botão do site, um print do "Inspecionar" no elemento ajuda muito.

@@ -30,6 +30,19 @@ for (const key of ['name', 'version', 'description']) {
   if (!manifest[key]) fail(`manifest.json sem "${key}"`);
 }
 
+// Textos traduzidos (__MSG_chave__): a chave precisa existir em todos os idiomas.
+const localesDir = path.join(root, '_locales');
+const msgKeys = [...JSON.stringify(manifest).matchAll(/__MSG_(\w+)__/g)].map((m) => m[1]);
+if (msgKeys.length) {
+  if (!manifest.default_locale) fail('manifest.json usa __MSG_ mas não tem "default_locale"');
+  const locales = existsSync(localesDir) ? readdirSync(localesDir) : [];
+  if (!locales.includes(manifest.default_locale)) fail(`_locales/${manifest.default_locale} não existe`);
+  for (const loc of locales) {
+    const messages = JSON.parse(readFileSync(path.join(localesDir, loc, 'messages.json'), 'utf8'));
+    for (const key of msgKeys) if (!messages[key]?.message) fail(`_locales/${loc}: falta "${key}"`);
+  }
+}
+
 const VALID_PERMISSIONS = new Set([
   'activeTab', 'alarms', 'bookmarks', 'clipboardRead', 'clipboardWrite', 'contextMenus', 'cookies',
   'declarativeNetRequest', 'declarativeNetRequestWithHostAccess', 'downloads', 'history', 'identity',

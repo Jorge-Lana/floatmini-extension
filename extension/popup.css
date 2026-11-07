@@ -370,6 +370,11 @@ kbd {
   color: #737373;
 }
 
+.footer-link + .footer-link {
+  margin-left: 10px;
+  margin-right: auto;
+}
+
 .footer-link:hover {
   color: #e5e5e5;
 }

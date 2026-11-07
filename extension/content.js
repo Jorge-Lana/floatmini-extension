@@ -13,8 +13,166 @@
     : host === 'youtube.com' || host.endsWith('.youtube.com') ? 'youtube'
     : host === 'open.spotify.com' ? 'spotify'
     : host === 'netflix.com' || host.endsWith('.netflix.com') ? 'netflix'
+    : host === 'soundcloud.com' || host.endsWith('.soundcloud.com') ? 'soundcloud'
+    : host === 'deezer.com' || host.endsWith('.deezer.com') ? 'deezer'
     : 'other';
-  const IS_MUSIC_SITE = SITE === 'youtube-music' || SITE === 'spotify';
+  const IS_MUSIC_SITE = ['youtube-music', 'spotify', 'soundcloud', 'deezer'].includes(SITE);
+
+  // Traduções da janela flutuante e dos botões na página (pt é o padrão).
+  const I18N = {
+    "Legenda menor": {
+      "en": "Smaller subtitles",
+      "es": "Subtítulos más pequeños"
+    },
+    "Legenda maior": {
+      "en": "Bigger subtitles",
+      "es": "Subtítulos más grandes"
+    },
+    "Play/Pausar (espaço)": {
+      "en": "Play/Pause (space)",
+      "es": "Reproducir/Pausar (espacio)"
+    },
+    "Velocidade": {
+      "en": "Speed",
+      "es": "Velocidad"
+    },
+    "Voltar 10 segundos (←)": {
+      "en": "Back 10 seconds (←)",
+      "es": "Atrás 10 segundos (←)"
+    },
+    "Avançar 10 segundos (→)": {
+      "en": "Forward 10 seconds (→)",
+      "es": "Adelante 10 segundos (→)"
+    },
+    "Clique ou arraste para mudar o tempo": {
+      "en": "Click or drag to change the time",
+      "es": "Haz clic o arrastra para cambiar el tiempo"
+    },
+    "Tempo do vídeo": {
+      "en": "Video time",
+      "es": "Tiempo del video"
+    },
+    "Vídeo anterior (↑)": {
+      "en": "Previous video (↑)",
+      "es": "Video anterior (↑)"
+    },
+    "Próximo vídeo (↓)": {
+      "en": "Next video (↓)",
+      "es": "Siguiente video (↓)"
+    },
+    "Play (espaço)": {
+      "en": "Play (space)",
+      "es": "Reproducir (espacio)"
+    },
+    "Pausar (espaço)": {
+      "en": "Pause (space)",
+      "es": "Pausar (espacio)"
+    },
+    "Mudo (M)": {
+      "en": "Mute (M)",
+      "es": "Silenciar (M)"
+    },
+    "Volume (↑ ↓)": {
+      "en": "Volume (↑ ↓)",
+      "es": "Volumen (↑ ↓)"
+    },
+    "Ativar som (M)": {
+      "en": "Unmute (M)",
+      "es": "Activar sonido (M)"
+    },
+    "Anterior": {
+      "en": "Previous",
+      "es": "Anterior"
+    },
+    "Próxima": {
+      "en": "Next",
+      "es": "Siguiente"
+    },
+    "Play/Pausar": {
+      "en": "Play/Pause",
+      "es": "Reproducir/Pausar"
+    },
+    "Ordem aleatória": {
+      "en": "Shuffle",
+      "es": "Aleatorio"
+    },
+    "Repetir": {
+      "en": "Repeat",
+      "es": "Repetir"
+    },
+    "Ordem aleatória: ligada": {
+      "en": "Shuffle: on",
+      "es": "Aleatorio: activado"
+    },
+    "Ordem aleatória: desligada": {
+      "en": "Shuffle: off",
+      "es": "Aleatorio: desactivado"
+    },
+    "Repetir: desligado": {
+      "en": "Repeat: off",
+      "es": "Repetir: desactivado"
+    },
+    "Repetir: todas": {
+      "en": "Repeat: all",
+      "es": "Repetir: todas"
+    },
+    "Repetir: só esta música": {
+      "en": "Repeat: this song",
+      "es": "Repetir: solo esta canción"
+    },
+    "Nenhum vídeo encontrado nesta página.": {
+      "en": "No video found on this page.",
+      "es": "No se encontró ningún video en esta página."
+    },
+    "O navegador não permitiu abrir a janela flutuante nesta página.": {
+      "en": "The browser did not allow the floating window on this page.",
+      "es": "El navegador no permitió abrir la ventana flotante en esta página."
+    },
+    "🗗  Clique aqui para abrir a janela flutuante": {
+      "en": "🗗  Click here to open the floating window",
+      "es": "🗗  Haz clic aquí para abrir la ventana flotante"
+    },
+    "FloatMini: abrir em janela flutuante sempre no topo (Alt+P)": {
+      "en": "FloatMini: open in an always-on-top floating window (Alt+P)",
+      "es": "FloatMini: abrir en una ventana flotante siempre visible (Alt+P)"
+    },
+    "🗗 Flutuar": {
+      "en": "🗗 Float",
+      "es": "🗗 Flotar"
+    },
+    "Janela flutuante (FloatMini)": {
+      "en": "Floating window (FloatMini)",
+      "es": "Ventana flotante (FloatMini)"
+    },
+    "Janela flutuante sempre no topo (Alt+P)": {
+      "en": "Always-on-top floating window (Alt+P)",
+      "es": "Ventana flotante siempre visible (Alt+P)"
+    },
+    "Pular abertura": {
+      "en": "Skip intro",
+      "es": "Saltar intro"
+    },
+    "Próximo episódio": {
+      "en": "Next episode",
+      "es": "Siguiente episodio"
+    },
+    "A seguir: ": {
+      "en": "Up next: ",
+      "es": "A continuación: "
+    },
+    "Volume": {
+      "en": "Volume",
+      "es": "Volumen"
+    }
+  };
+  const UI_LANG = (() => {
+    try {
+      return (chrome.i18n?.getUILanguage?.() || 'pt').slice(0, 2).toLowerCase();
+    } catch {
+      return 'pt';
+    }
+  })();
+  const L = (pt) => I18N[pt]?.[UI_LANG] ?? pt;
 
   const VIDEO_AUTO_SIZE = { width: 480, height: 270 };
   const MUSIC_WIDGET_SIZE = { width: 360, height: 172 };
@@ -23,12 +181,40 @@
   // ---------------------------------------------------------------------------
   // Preferências (popup)
   // ---------------------------------------------------------------------------
-  const settings = { pipSize: 'auto', feedAutoAdvance: false };
+  const settings = { pipSize: 'auto', feedAutoAdvance: false, windowSizes: {}, captionScale: {} };
 
-  chrome.storage.local.get(['pipSize', 'feedAutoAdvance'], (res) => {
+  chrome.storage.local.get(['pipSize', 'feedAutoAdvance', 'windowSizes', 'captionScale'], (res) => {
     if (res?.pipSize) settings.pipSize = res.pipSize;
     settings.feedAutoAdvance = !!res?.feedAutoAdvance;
+    if (res?.windowSizes && typeof res.windowSizes === 'object') settings.windowSizes = res.windowSizes;
+    if (res?.captionScale && typeof res.captionScale === 'object') settings.captionScale = res.captionScale;
   });
+
+  // Tamanho da janela: lembra o último, separado para vídeo, música e vídeo curto.
+  const windowKind = () => (IS_MUSIC_SITE ? 'music' : isFeedPage() ? 'feed' : 'video');
+  function rememberedSize(kind) {
+    const s = settings.windowSizes?.[kind];
+    return s && s.width >= 200 && s.height >= 120 ? { width: Math.round(s.width), height: Math.round(s.height) } : null;
+  }
+  function rememberWindowSize(pipWindow, kind) {
+    let timer = null;
+    const save = () => {
+      const width = pipWindow.innerWidth;
+      const height = pipWindow.innerHeight;
+      if (!(width >= 200 && height >= 120)) return;
+      settings.windowSizes = { ...settings.windowSizes, [kind]: { width, height } };
+      try {
+        chrome.storage.local.set({ windowSizes: settings.windowSizes });
+      } catch {
+        /* ignora */
+      }
+    };
+    pipWindow.addEventListener('resize', () => {
+      clearTimeout(timer);
+      timer = setTimeout(save, 400);
+    });
+    pipWindow.addEventListener('pagehide', save);
+  }
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes.pipSize) settings.pipSize = changes.pipSize.newValue || 'auto';
@@ -402,13 +588,24 @@
   // progresso do site). É a fonte certa: com a reprodução sem pausa entre
   // faixas, o <video> continua contando o tempo da música anterior.
   function ytMusicClock() {
+    // 1º: API do player (a mais certa), informada pelo yt-volume.js.
+    if (playerClock && Date.now() - playerClock.at < 2500) {
+      const elapsed = (Date.now() - playerClock.at) / 1000;
+      const playing = findYtMusicMedia()?.paused === false;
+      return { current: Math.min(playerClock.total, playerClock.current + (playing ? elapsed : 0)), total: playerClock.total };
+    }
     const root = findYtMusicBar();
     const slider = deep$('#progress-bar');
     const now = Number(slider?.getAttribute('aria-valuenow'));
     const max = Number(slider?.getAttribute('aria-valuemax'));
     if (Number.isFinite(now) && max > 0) return { current: now, total: max };
     const text = (root && deep$('.ytMusicMiniPlayerTimeInfo, .time-info', root)?.textContent) || '';
-    const m = text.match(/(\d+(?::\d+)+)\s*\/\s*(\d+(?::\d+)+)/);
+    let m = text.match(/(\d+(?::\d+)+)\s*\/\s*(\d+(?::\d+)+)/);
+    // Layouts novos: procura o "0:05 / 3:31" em qualquer texto da barra.
+    if (!m && root) {
+      const node = deepAll('span, div, yt-formatted-string', root).find((n) => n.childElementCount === 0 && /^\s*\d+(:\d+)+\s*\/\s*\d+(:\d+)+\s*$/.test(n.textContent || ''));
+      m = node?.textContent.match(/(\d+(?::\d+)+)\s*\/\s*(\d+(?::\d+)+)/) || null;
+    }
     if (!m) return null;
     const current = parseClock(m[1]);
     const total = parseClock(m[2]);
@@ -452,9 +649,15 @@
         return v ? { current: v.currentTime, total: v.duration } : null;
       },
       seek: (fraction) => {
+        const clock = ytMusicClock();
+        if (playerClock && clock) {
+          // Pela API do player: sempre relativo à música atual.
+          const detail = JSON.stringify({ time: fraction * clock.total });
+          document.dispatchEvent(new CustomEvent('floatmini:seek-player', { detail }));
+          return;
+        }
         const v = findMainVideo();
         if (!v) return;
-        const clock = ytMusicClock();
         if (clock) {
           // O <video> pode ter as músicas anteriores no começo: desloca a
           // partir do início da música atual.
@@ -482,6 +685,7 @@
         repeat: ['.ytmusicPlayerControlsRepeatButton button', 'ytmusic-player-bar .repeat', '#right-controls .repeat', 'yt-icon-button.repeat']
       },
       state: ytMusicState,
+      upNext: ytMusicUpNext,
       // Atalhos de teclado do YouTube Music, usados como último recurso.
       shortcuts: { shuffle: 's', repeat: 'r', next: 'j', prev: 'k' }
     },
@@ -522,6 +726,62 @@
       },
       state: spotifyState
     },
+    // SoundCloud e Deezer: nome, artista e capa vêm da Media Session (o mini
+    // player usa isso primeiro); os botões são os do próprio site.
+    soundcloud: {
+      root: () => $('.playControls') || document,
+      title: () => $('.playbackSoundBadge__titleLink')?.getAttribute('title') || $('.playbackSoundBadge__titleLink span[aria-hidden]')?.textContent,
+      artist: () => $('.playbackSoundBadge__lightLink')?.getAttribute('title') || $('.playbackSoundBadge__lightLink')?.textContent,
+      cover: () => {
+        const bg = $('.playbackSoundBadge__avatar .sc-artwork span, .playbackSoundBadge__avatar span')?.style?.backgroundImage || '';
+        return bg.match(/url\(["']?([^"')]+)/)?.[1];
+      },
+      isPlaying: () => !!$('.playControls__play.playing'),
+      progress: () => ({
+        current: parseClock($('.playbackTimeline__timePassed span[aria-hidden="true"]')?.textContent || $('.playbackTimeline__timePassed')?.textContent),
+        total: parseClock($('.playbackTimeline__duration span[aria-hidden="true"]')?.textContent || $('.playbackTimeline__duration')?.textContent)
+      }),
+      // Clica na linha do tempo do site no ponto certo.
+      seek: (fraction) => clickAtFraction($('.playbackTimeline__progressWrapper'), fraction),
+      buttons: {
+        prev: ['.skipControl__previous'],
+        play: ['.playControls__play'],
+        next: ['.skipControl__next'],
+        shuffle: ['.shuffleControl'],
+        repeat: ['.repeatControl']
+      },
+      state: () => {
+        const repeat = $('.repeatControl');
+        return {
+          shuffle: $('.shuffleControl') ? $('.shuffleControl').classList.contains('m-shuffling') : null,
+          repeat: !repeat ? null : repeat.classList.contains('m-one') ? 'one' : repeat.classList.contains('m-all') ? 'all' : 'off'
+        };
+      }
+    },
+    deezer: {
+      root: () => $('[data-testid="player"]') || $('#page_player') || document,
+      title: () => $('[data-testid="item_title"]')?.textContent,
+      artist: () => $('[data-testid="item_subtitle"]')?.textContent,
+      cover: () => $('[data-testid="item_cover"] img')?.src,
+      isPlaying: () =>
+        !!$('[data-testid="pause_button"], [data-testid="play_button_pause"]') ||
+        /paus/i.test($('[data-testid="play_button"]')?.getAttribute('aria-label') || ''),
+      progress: () => {
+        const current = parseClock($('[data-testid="elapsed_time"]')?.textContent);
+        const remaining = parseClock(($('[data-testid="remaining_time"]')?.textContent || '').replace('-', ''));
+        const total = parseClock($('[data-testid="duration"]')?.textContent);
+        return { current, total: total > 0 ? total : current + remaining };
+      },
+      seek: (fraction) => clickAtFraction($('[data-testid="progress_bar"], [data-testid="player_progress"]'), fraction),
+      buttons: {
+        prev: ['[data-testid="previous_track_button"]', '[aria-label*="anterior" i]', '[aria-label*="previous" i]'],
+        play: ['[data-testid="play_button"]', '[data-testid="play_button_pause"]', '[data-testid="play_button_play"]', '[data-testid="pause_button"]'],
+        next: ['[data-testid="next_track_button"]', '[aria-label*="próxim" i]', '[aria-label*="next" i]'],
+        shuffle: ['[data-testid="shuffle_button"]', '[aria-label*="aleat" i]', '[aria-label*="shuffle" i]'],
+        repeat: ['[data-testid="repeat_button"]', '[data-testid="repeat_one_button"]', '[aria-label*="repet" i]', '[aria-label*="repeat" i]']
+      },
+      state: () => ({ shuffle: pressedOf($('[data-testid="shuffle_button"]')), repeat: null })
+    },
     youtube: {
       // No YouTube "normal", aleatório/repetir existem só no painel de playlist.
       root: () => $('ytd-playlist-panel-renderer'),
@@ -531,6 +791,28 @@
       }
     }
   };
+
+  // Clique numa barra de progresso do site, no ponto (0 a 1) pedido.
+  function clickAtFraction(bar, fraction) {
+    if (!bar) return;
+    const rect = bar.getBoundingClientRect();
+    const clientX = rect.left + fraction * rect.width;
+    const clientY = rect.top + rect.height / 2;
+    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+      bar.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, clientX, clientY, button: 0 }));
+    }
+  }
+
+  // "A seguir": a próxima música da fila do YouTube Music.
+  function ytMusicUpNext() {
+    const items = deepAll('ytmusic-player-queue-item');
+    const current = items.findIndex((item) => item.hasAttribute('selected') || item.getAttribute('play-button-state') === 'playing' || item.getAttribute('play-button-state') === 'paused');
+    const next = current >= 0 ? items[current + 1] : null;
+    if (!next) return null;
+    const title = nodeText(deep$('.song-title', next) || next).split('\n')[0];
+    const artist = nodeText(deep$('.byline', next) || next).split('\n')[0];
+    return title ? { title, artist: artist === title ? '' : artist } : null;
+  }
 
   function siteAction(name) {
     const cfg = SITE_CONTROLS[SITE];
@@ -622,6 +904,22 @@
       transition: bottom 0.25s ease;
     }
     .fm-captions:empty { display: none; }
+    .fm-captions { font-size: calc(clamp(12px, 4.4vw, 30px) * var(--fm-cap, 1)); }
+    .fm-overlay-bottom .fm-btn.fm-cc { display: none; border-radius: 6px; min-width: 30px; font-size: 13px; }
+    body.fm-has-cc:not(.fm-feed) .fm-overlay-bottom .fm-btn.fm-cc { display: inline-flex; }
+    /* Título do episódio (streaming), só com os controles visíveis. */
+    .fm-title {
+      position: absolute; left: 14px; right: 14px; top: 10px; z-index: 1;
+      font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+    }
+    .fm-topshade {
+      position: absolute; left: 0; right: 0; top: 0; height: 64px; pointer-events: none;
+      background: linear-gradient(rgba(0, 0, 0, 0.7), transparent); opacity: 0; transition: opacity 0.25s ease;
+    }
+    .fm-title:empty, body.fm-feed .fm-title { display: none; }
+    body.fm-active .fm-title:not(:empty) { opacity: 1; }
+    body.fm-streaming.fm-active:not(.fm-feed) .fm-topshade { opacity: 1; }
     body.fm-active .fm-captions { bottom: 78px; }
     .fm-overlay-bottom .fm-volume input[type='range'] { width: 70px; }
     /* Janela estreita: ícones menores e volume curto. */
@@ -652,6 +950,12 @@
     body.fm-feed .fm-overlay-bottom .fm-volume input[type='range'] { display: block; width: 70px; }
     body.fm-feed .fm-shade { height: 70px; }
     body.fm-feed.fm-active .fm-captions { bottom: 7%; }
+    .fm-heart {
+      position: absolute; left: 50%; top: 50%; font-size: 84px; color: #ff2d55; pointer-events: none;
+      transform: translate(-50%, -50%) scale(0.6); opacity: 0; animation: fm-heart 0.8s ease forwards;
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+    }
+    @keyframes fm-heart { 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } 60% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
     .fm-feed-line { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.25); display: none; pointer-events: none; }
     .fm-feed-line > div { height: 100%; width: 0; background: #fff; }
     body.fm-feed .fm-feed-line { display: block; }
@@ -673,6 +977,10 @@
     .fm-meta { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
     .fm-track { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .fm-artist { font-size: 12px; color: #a3a3a3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fm-artist[hidden] { display: none; }
+    .fm-upnext { font-size: 12px; color: #e5e5e5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: fm-in 0.3s ease; }
+    .fm-upnext:empty { display: none; }
+    @keyframes fm-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
     .fm-progress { height: 3px; background: rgba(255, 255, 255, 0.2); border-radius: 3px; overflow: hidden; margin-top: 4px; transition: height 0.15s ease; }
     .fm-seek { padding: 5px 0; margin: -1px 0 -5px; cursor: pointer; touch-action: none; }
     .fm-seek:hover .fm-progress { height: 5px; }
@@ -731,6 +1039,8 @@
   function getVideoPipSize() {
     const size = settings.pipSize;
     if (size && typeof size === 'object' && size.width > 0 && size.height > 0) return size;
+    const last = rememberedSize(windowKind());
+    if (last) return last;
     // Shorts, TikTok e Reels são verticais: janela em pé.
     if (isFeedPage()) return { width: 300, height: 533 };
     return VIDEO_AUTO_SIZE;
@@ -752,11 +1062,16 @@
   ];
   const SKIP_TEXT = /(pular|skip|ignorar)\s+(a\s+|o\s+)?(abertura|introdu|intro|recap|resumo|cr[ée]ditos|credits)/i;
   const NEXT_TEXT = /(pr[óo]ximo\s+epis[óo]dio|next\s+episode|assistir\s+(o\s+)?pr[óo]ximo|pr[óo]ximo\s+ep\b)/i;
-  const ACTION_LABEL = { skip: 'Pular abertura', next: 'Próximo episódio' };
+  const ACTION_LABEL = { skip: L('Pular abertura'), next: L('Próximo episódio') };
 
-  function findSiteAction() {
+  // "Próximo episódio" pelo texto só vale perto do fim: o botão de próximo
+  // episódio da barra do player (ex.: Netflix) fica lá o episódio inteiro.
+  const NEXT_TEXT_LAST_SECONDS = 120;
+
+  function findSiteAction(video) {
     // YouTube fica de fora (não tem abertura; e "pular" lá é anúncio).
     if (SITE !== 'other' && SITE !== 'netflix') return null;
+    const nearEnd = !!video && (video.ended || (video.duration > 0 && video.duration - video.currentTime <= NEXT_TEXT_LAST_SECONDS));
     for (const { kind, selector } of SITE_ACTIONS) {
       const node = [...document.querySelectorAll(selector)].find(isVisible);
       if (node) return { kind, node, label: shortLabel(nodeText(node), kind) };
@@ -764,15 +1079,66 @@
     for (const node of document.querySelectorAll('button, [role="button"], a')) {
       const text = `${nodeText(node)} ${node.getAttribute('aria-label') || ''}`;
       if (text.length > 80 || /an[úu]ncio|\bads?\b/i.test(text)) continue;
-      const kind = SKIP_TEXT.test(text) ? 'skip' : NEXT_TEXT.test(text) ? 'next' : null;
+      const kind = SKIP_TEXT.test(text) ? 'skip' : NEXT_TEXT.test(text) && nearEnd ? 'next' : null;
       if (kind && isVisible(node)) return { kind, node, label: shortLabel(nodeText(node), kind) };
     }
     return null;
   }
 
+  // O botão da janela copia o visual do botão do site (cor, borda, cantos,
+  // fonte), para parecer o do streaming que a pessoa está usando.
+  const SITE_STYLE_PROPS = ['backgroundColor', 'color', 'borderRadius', 'borderTop', 'borderRight', 'borderBottom', 'borderLeft', 'fontWeight', 'fontFamily', 'textTransform', 'letterSpacing'];
+  const isClear = (color) => !color || color === 'transparent' || /rgba\([^)]*,\s*0\)$/.test(color);
+
+  function copySiteStyle(btn, node) {
+    for (const prop of SITE_STYLE_PROPS) btn.style[prop] = '';
+    if (!node) return;
+    // O fundo pode estar num filho (ex.: <button><div class="fundo">).
+    let source = node;
+    let style = getComputedStyle(node);
+    if (isClear(style.backgroundColor)) {
+      const child = [...node.querySelectorAll('*')].find((c) => !isClear(getComputedStyle(c).backgroundColor));
+      if (child) {
+        source = child;
+        style = getComputedStyle(child);
+      }
+    }
+    if (isClear(style.backgroundColor) && !parseFloat(style.borderTopWidth)) return; // sem visual próprio: fica o padrão
+    for (const prop of SITE_STYLE_PROPS) {
+      const value = (source === node ? style : getComputedStyle(source))[prop];
+      if (value) btn.style[prop] = value;
+    }
+    const text = getComputedStyle(node).color;
+    if (!isClear(text) && source !== node) btn.style.color = text;
+  }
+
   function shortLabel(text, kind) {
     const clean = (text || '').replace(/\s+/g, ' ').trim();
     return clean && clean.length <= 28 ? clean : ACTION_LABEL[kind];
+  }
+
+  const LIKE_SELECTOR = [
+    '[data-e2e="like-icon"]',
+    '[data-e2e="browse-like-icon"]',
+    '#like-button button',
+    'like-button-view-model button',
+    'svg[aria-label="Curtir"]',
+    'svg[aria-label="Like"]',
+    'svg[aria-label="Descurtir"]',
+    'svg[aria-label="Unlike"]'
+  ].join(', ');
+
+  function findLikeButton(anchor) {
+    let node = anchor?.nodeType === 1 ? anchor : anchor?.parentElement;
+    for (let i = 0; i < 12 && node && node !== document.body; i++, node = node.parentElement) {
+      const hit = node.querySelector(LIKE_SELECTOR);
+      if (!hit) continue;
+      const btn = hit.closest('button, [role="button"]') || hit;
+      const label = `${hit.getAttribute('aria-label') || ''} ${btn.getAttribute('aria-label') || ''}`;
+      const liked = btn.getAttribute('aria-pressed') === 'true' || /descurtir|unlike|remover curtida/i.test(label);
+      return liked ? null : btn;
+    }
+    return null;
   }
 
   function feedButton(dir) {
@@ -902,24 +1268,44 @@
     park(video);
 
     const bottom = el(doc, 'div', 'fm-overlay-bottom');
-    const playBtn = makeButton(doc, '', 'Play/Pausar (espaço)', () => (video.paused ? video.play() : video.pause()));
+    // Tamanho da legenda (A− / A+), lembrado por site.
+    const captionScale = () => Number(settings.captionScale?.[host]) || 1;
+    const setCaptionScale = (value) => {
+      const next = Math.round(Math.min(1.9, Math.max(0.7, value)) * 100) / 100;
+      settings.captionScale = { ...settings.captionScale, [host]: next };
+      try {
+        chrome.storage.local.set({ captionScale: settings.captionScale });
+      } catch {
+        /* ignora */
+      }
+      doc.body.style.setProperty('--fm-cap', String(next));
+    };
+    const captionSmaller = makeButton(doc, 'A−', L('Legenda menor'), () => setCaptionScale(captionScale() - 0.15));
+    const captionBigger = makeButton(doc, 'A+', L('Legenda maior'), () => setCaptionScale(captionScale() + 0.15));
+    captionSmaller.classList.add('fm-cc');
+    captionSmaller.style.marginLeft = 'auto';
+    captionBigger.classList.add('fm-cc');
+    doc.body.style.setProperty('--fm-cap', String(captionScale()));
+    const playBtn = makeButton(doc, '', L('Play/Pausar (espaço)'), () => (video.paused ? video.play() : video.pause()));
     playBtn.classList.add('fm-primary');
-    const speedBtn = makeButton(doc, '', 'Velocidade', () => {
+    const speedBtn = makeButton(doc, '', L('Velocidade'), () => {
       const index = SPEEDS.indexOf(video.playbackRate);
       video.playbackRate = SPEEDS[(index + 1) % SPEEDS.length];
     });
     const volume = buildVolumeControl(doc, () => volumeTarget(video));
     speedBtn.classList.add('fm-speed');
-    const back = makeButton(doc, '', 'Voltar 10 segundos (←)', () => seekBy(video, -10));
+    const back = makeButton(doc, '', L('Voltar 10 segundos (←)'), () => seekBy(video, -10));
     setIcon(doc, back, 'rewind');
-    const fwd = makeButton(doc, '', 'Avançar 10 segundos (→)', () => seekBy(video, 10));
+    const fwd = makeButton(doc, '', L('Avançar 10 segundos (→)'), () => seekBy(video, 10));
     setIcon(doc, fwd, 'forward');
     bottom.append(
       playBtn,
       back,
       fwd,
       speedBtn,
-      volume.node
+      volume.node,
+      captionSmaller,
+      captionBigger
     );
 
     // Linha do tempo (some em transmissões ao vivo, sem duração).
@@ -932,8 +1318,8 @@
     scrub.max = '1000';
     scrub.step = '1';
     scrub.value = '0';
-    scrub.title = 'Clique ou arraste para mudar o tempo';
-    scrub.setAttribute('aria-label', 'Tempo do vídeo');
+    scrub.title = L('Clique ou arraste para mudar o tempo');
+    scrub.setAttribute('aria-label', L('Tempo do vídeo'));
     timeline.append(timeNow, scrub, timeTotal);
     let scrubbing = false;
     const renderTime = (current) => {
@@ -979,23 +1365,43 @@
     };
 
     const captions = el(doc, 'div', 'fm-captions');
+    // Streaming: título do episódio, discreto em cima, junto com os controles.
+    const titleBox = el(doc, 'div', 'fm-title');
+    const STREAMING = SITE === 'netflix' || SITE === 'other';
+    doc.body.classList.toggle('fm-streaming', STREAMING);
+    const readTitle = () => {
+      const netflix = $('[data-uia="video-title"]');
+      if (netflix) return [...netflix.children].map((c) => nodeText(c)).filter(Boolean).join(' · ') || nodeText(netflix);
+      const meta = navigator.mediaSession?.metadata;
+      if (meta?.title) return meta.artist ? `${meta.title} · ${meta.artist}` : meta.title;
+      return cleanTitle(document.title);
+    };
     const readNearby = createNearbyCaptionReader();
     let tick = 0;
     const captionTimer = setInterval(() => {
       const text = readSiteCaptions(video, placeholder || originalParent, readNearby);
       if (captions.textContent !== text) captions.textContent = text;
+      if (text) doc.body.classList.add('fm-has-cc');
       if (++tick % 3) return; // o resto, a cada ~600 ms
-      siteAction = Date.now() < siteActionPausedUntil ? null : findSiteAction();
+      if (STREAMING && !isFeedPage()) {
+        const title = readTitle();
+        if (titleBox.textContent !== title) titleBox.textContent = title;
+      }
+      const previousNode = siteAction?.node;
+      siteAction = Date.now() < siteActionPausedUntil ? null : findSiteAction(video);
       siteActionBtn.hidden = !siteAction;
-      if (siteAction) siteActionBtn.textContent = `${siteAction.label} ›`;
+      if (siteAction) {
+        siteActionBtn.textContent = `${siteAction.label} ›`;
+        if (siteAction.node !== previousNode) copySiteStyle(siteActionBtn, siteAction.node);
+      }
       followNewEpisode();
     }, 200);
 
     // Feed (Shorts, TikTok, Reels): só anterior/próximo na lateral.
     const feedNav = el(doc, 'div', 'fm-feed-nav');
-    const upBtn = makeButton(doc, '', 'Vídeo anterior (↑)', () => switchFeed(-1));
+    const upBtn = makeButton(doc, '', L('Vídeo anterior (↑)'), () => switchFeed(-1));
     setIcon(doc, upBtn, 'up');
-    const downBtn = makeButton(doc, '', 'Próximo vídeo (↓)', () => switchFeed(1));
+    const downBtn = makeButton(doc, '', L('Próximo vídeo (↓)'), () => switchFeed(1));
     setIcon(doc, downBtn, 'down');
     feedNav.append(upBtn, downBtn);
 
@@ -1017,7 +1423,8 @@
       siteActionPausedUntil = Date.now() + 1500;
     });
 
-    doc.body.append(stage, el(doc, 'div', 'fm-shade'), captions, timeline, bottom, feedNav, feedLine, siteActionBtn);
+    // Título só nos streamings: no YouTube a janela fica limpa.
+    doc.body.append(stage, el(doc, 'div', 'fm-shade'), ...(STREAMING ? [el(doc, 'div', 'fm-topshade'), titleBox] : []), captions, timeline, bottom, feedNav, feedLine, siteActionBtn);
 
     // Controles visíveis enquanto o mouse mexe (ou com o vídeo pausado).
     let idleTimer = null;
@@ -1042,7 +1449,7 @@
       doc.title = cleanTitle(document.title);
       if (video.paused) doc.body.classList.add('fm-active');
       setIcon(doc, playBtn, video.paused ? 'play' : 'pause');
-      playBtn.title = video.paused ? 'Play (espaço)' : 'Pausar (espaço)';
+      playBtn.title = video.paused ? L('Play (espaço)') : L('Pausar (espaço)');
       speedBtn.textContent = `${video.playbackRate}x`;
       doc.body.classList.toggle('fm-feed', isFeedPage());
       syncMirrorAudio();
@@ -1176,8 +1583,29 @@
       const dy = e.clientY - swipe.y;
       swipe = null;
       if (Math.abs(dy) >= 80 && Math.abs(dy) > Math.abs(dx) * 1.5) switchFeed(dy < 0 ? 1 : -1);
-      else if (Math.abs(dx) < 6 && Math.abs(dy) < 6) video.paused ? video.play() : video.pause();
+      else if (Math.abs(dx) < 6 && Math.abs(dy) < 6) {
+        // Um clique pausa; dois cliques curtem (espera um pouco para saber qual foi).
+        clearTimeout(tapTimer);
+        if (Date.now() - lastTap < 300) {
+          lastTap = 0;
+          likeCurrent();
+        } else {
+          lastTap = Date.now();
+          tapTimer = setTimeout(() => (video.paused ? video.play() : video.pause()), 300);
+        }
+      }
     });
+    let tapTimer = null;
+    let lastTap = 0;
+
+    // Curtir pelo próprio botão do site (só curte, nunca descurte).
+    function likeCurrent() {
+      const btn = findLikeButton(mirror ? video : placeholder || originalParent);
+      if (btn) btn.click();
+      const heart = el(doc, 'div', 'fm-heart', '♥');
+      doc.body.append(heart);
+      setTimeout(() => heart.remove(), 800);
+    }
 
     if (wasPlaying && video.paused) video.play().catch(() => {});
 
@@ -1232,11 +1660,13 @@
   // <video> fica mais baixo por causa da normalização de volume do YouTube,
   // então o controle da janela segue o player, não o <video>.
   let playerVolume = null; // { volume, muted, at }
+  let playerClock = null; // { current, total, at } — tempo pela API do player
   document.addEventListener('floatmini:volume-state', (event) => {
     try {
       const state = JSON.parse(event.detail);
       if (typeof state.percent !== 'number') return;
       playerVolume = { volume: Math.min(1, Math.max(0, state.percent / 100)), muted: !!state.muted, at: Date.now() };
+      playerClock = Number(state.total) > 0 ? { current: Number(state.current) || 0, total: Number(state.total), at: Date.now() } : null;
     } catch {
       /* ignora */
     }
@@ -1323,7 +1753,7 @@
 
   function buildVolumeControl(doc, getTarget) {
     const wrap = el(doc, 'div', 'fm-volume');
-    const muteBtn = makeButton(doc, '', 'Mudo (M)', () => {
+    const muteBtn = makeButton(doc, '', L('Mudo (M)'), () => {
       getTarget()?.toggleMute();
       setTimeout(refresh, 50);
     });
@@ -1332,8 +1762,8 @@
     slider.min = '0';
     slider.max = '100';
     slider.step = '1';
-    slider.title = 'Volume (↑ ↓)';
-    slider.setAttribute('aria-label', 'Volume');
+    slider.title = L('Volume (↑ ↓)');
+    slider.setAttribute('aria-label', L('Volume'));
     slider.addEventListener('input', () => {
       getTarget()?.set(Number(slider.value) / 100);
       paint(Number(slider.value), Number(slider.value) === 0);
@@ -1344,7 +1774,7 @@
       slider.style.setProperty('--fm-fill', `${muted ? 0 : percent}%`);
       const icon = muted || percent === 0 ? 'volumeOff' : percent < 50 ? 'volumeDown' : 'volumeUp';
       setIcon(doc, muteBtn, icon);
-      muteBtn.title = muted ? 'Ativar som (M)' : 'Mudo (M)';
+      muteBtn.title = muted ? L('Ativar som (M)') : L('Mudo (M)');
     };
     const refresh = () => {
       const state = getTarget()?.get();
@@ -1376,6 +1806,8 @@
     button.replaceChildren(svg);
   }
 
+  const UP_NEXT_LAST_SECONDS = 15;
+
   function buildMusicWidget(pipWindow) {
     const cfg = SITE_CONTROLS[SITE];
     const doc = preparePipDocument(pipWindow, 'fm-music');
@@ -1392,7 +1824,7 @@
     // Área clicável maior que a barra: clicar ou arrastar muda o tempo da música.
     const seekArea = el(doc, 'div', 'fm-seek');
     seekArea.append(progress);
-    seekArea.title = 'Clique ou arraste para mudar o tempo';
+    seekArea.title = L('Clique ou arraste para mudar o tempo');
     let seeking = false;
     const seekTo = (event) => {
       const rect = progress.getBoundingClientRect();
@@ -1417,15 +1849,17 @@
     seekArea.addEventListener('pointerup', endSeek);
     seekArea.addEventListener('pointercancel', endSeek);
     const volume = buildVolumeControl(doc, () => volumeTarget(null));
-    meta.append(track, artist, seekArea, volume.node);
+    // "A seguir" aparece só nos últimos segundos da música.
+    const upNext = el(doc, 'div', 'fm-upnext');
+    meta.append(track, artist, upNext, seekArea, volume.node);
     main.append(cover, meta);
 
     const controls = el(doc, 'div', 'fm-music-controls');
-    const prevBtn = makeButton(doc, '', 'Anterior', () => siteAction('prev'));
+    const prevBtn = makeButton(doc, '', L('Anterior'), () => siteAction('prev'));
     setIcon(doc, prevBtn, 'previous');
-    const nextBtn = makeButton(doc, '', 'Próxima', () => siteAction('next'));
+    const nextBtn = makeButton(doc, '', L('Próxima'), () => siteAction('next'));
     setIcon(doc, nextBtn, 'next');
-    const playBtn = makeButton(doc, '', 'Play/Pausar', () => {
+    const playBtn = makeButton(doc, '', L('Play/Pausar'), () => {
       if (!siteAction('play')) {
         const v = findMainVideo();
         if (v) v.paused ? v.play() : v.pause();
@@ -1437,12 +1871,12 @@
     const local = { shuffle: false, repeat: 'off' };
     const REPEAT_CYCLE = { off: 'all', all: 'one', one: 'off' };
 
-    const shuffleBtn = makeButton(doc, '', 'Ordem aleatória', () => {
+    const shuffleBtn = makeButton(doc, '', L('Ordem aleatória'), () => {
       const before = cfg.state?.();
       if (siteAction('shuffle') && before?.shuffle == null) local.shuffle = !local.shuffle;
       setTimeout(refresh, 250);
     });
-    const repeatBtn = makeButton(doc, '', 'Repetir', () => {
+    const repeatBtn = makeButton(doc, '', L('Repetir'), () => {
       const before = cfg.state?.();
       if (siteAction('repeat') && before?.repeat == null) local.repeat = REPEAT_CYCLE[local.repeat];
       setTimeout(refresh, 250);
@@ -1466,12 +1900,12 @@
       if (state.repeat != null) local.repeat = state.repeat;
 
       shuffleBtn.classList.toggle('fm-on', shuffleOn);
-      shuffleBtn.title = shuffleOn ? 'Ordem aleatória: ligada' : 'Ordem aleatória: desligada';
+      shuffleBtn.title = shuffleOn ? L('Ordem aleatória: ligada') : L('Ordem aleatória: desligada');
       shuffleBtn.setAttribute('aria-pressed', String(shuffleOn));
       setIcon(doc, shuffleBtn, 'shuffle');
 
       repeatBtn.classList.toggle('fm-on', repeatMode !== 'off');
-      repeatBtn.title = { off: 'Repetir: desligado', all: 'Repetir: todas', one: 'Repetir: só esta música' }[repeatMode];
+      repeatBtn.title = { off: L('Repetir: desligado'), all: L('Repetir: todas'), one: L('Repetir: só esta música') }[repeatMode];
       repeatBtn.dataset.mode = repeatMode;
       setIcon(doc, repeatBtn, repeatMode === 'one' ? 'repeatOne' : 'repeat');
     };
@@ -1490,6 +1924,10 @@
       const p = cfg.progress();
       const pct = p && p.total > 0 ? Math.min(100, (p.current / p.total) * 100) : 0;
       if (!seeking) bar.style.width = `${pct}%`;
+      const ending = p && p.total > 0 && p.total - p.current <= UP_NEXT_LAST_SECONDS && p.current > 0;
+      const next = ending ? cfg.upNext?.() : null;
+      upNext.textContent = next ? `${L('A seguir: ')}${next.title}${next.artist ? ` · ${next.artist}` : ''}` : '';
+      artist.hidden = !!next;
       renderToggles();
       volume.refresh();
     };
@@ -1526,7 +1964,7 @@
     if (isInstagramProfile()) return 'no_media';
     const video = IS_MUSIC_SITE ? null : findMainVideo();
     if (!IS_MUSIC_SITE && !video) {
-      showToast('Nenhum vídeo encontrado nesta página.');
+      showToast(L('Nenhum vídeo encontrado nesta página.'));
       return 'no_media';
     }
 
@@ -1540,8 +1978,10 @@
 
     if (docPip) {
       try {
-        const size = IS_MUSIC_SITE ? MUSIC_WIDGET_SIZE : getVideoPipSize();
+        const kind = windowKind();
+        const size = IS_MUSIC_SITE ? rememberedSize('music') || MUSIC_WIDGET_SIZE : getVideoPipSize();
         const pipWindow = await docPip.requestWindow({ width: size.width, height: size.height });
+        rememberWindowSize(pipWindow, kind);
         if (IS_MUSIC_SITE) buildMusicWidget(pipWindow);
         else buildVideoWindow(pipWindow, video);
         countFloatOpen();
@@ -1562,7 +2002,7 @@
       }
     }
 
-    showToast('O navegador não permitiu abrir a janela flutuante nesta página.');
+    showToast(L('O navegador não permitiu abrir a janela flutuante nesta página.'));
     return 'failed';
   }
 
@@ -1582,7 +2022,7 @@
     const btn = document.createElement('button');
     btn.id = 'floatmini-prompt';
     btn.type = 'button';
-    btn.textContent = '🗗  Clique aqui para abrir a janela flutuante';
+    btn.textContent = L('🗗  Clique aqui para abrir a janela flutuante');
     Object.assign(btn.style, {
       position: 'fixed',
       left: '50%',
@@ -1697,8 +2137,8 @@
     const btn = document.createElement('button');
     btn.id = 'floatmini-trigger-btn';
     btn.type = 'button';
-    btn.title = 'FloatMini: abrir em janela flutuante sempre no topo (Alt+P)';
-    btn.textContent = '🗗 Flutuar';
+    btn.title = L('FloatMini: abrir em janela flutuante sempre no topo (Alt+P)');
+    btn.textContent = L('🗗 Flutuar');
     const base = 'rgba(15, 23, 42, 0.88)';
     Object.assign(btn.style, {
       position: 'fixed',
@@ -1807,8 +2247,8 @@
     const btn = document.createElement('button');
     btn.id = NATIVE_BUTTON_ID;
     btn.type = 'button';
-    btn.setAttribute('aria-label', 'Janela flutuante (FloatMini)');
-    btn.title = 'Janela flutuante sempre no topo (Alt+P)';
+    btn.setAttribute('aria-label', L('Janela flutuante (FloatMini)'));
+    btn.title = L('Janela flutuante sempre no topo (Alt+P)');
     if (SITE === 'youtube') btn.className = 'ytp-button';
     btn.dataset.floatmini = 'native';
     Object.assign(btn.style, {

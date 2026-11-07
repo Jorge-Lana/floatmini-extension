@@ -36,6 +36,7 @@ Requer Chrome, Edge, Brave ou Opera 116+, ou **Firefox 151+** (desktop).
 | YouTube, Netflix, Prime Video, Disney+ e outros sites com vídeo | Só o vídeo, ocupando a janela inteira, com as legendas do site. Os controles aparecem ao mexer o mouse e somem sozinhos depois de 2 segundos: linha do tempo (clique ou arraste), ⏪ 10s, Play/Pausar, 10s ⏩, velocidade (1x a 2x) e volume (mudo + controle deslizante). Nos streamings ativados no menu, o ícone fica na barra do player, ao lado da tela cheia; em outros sites, um ícone aparece no canto do vídeo ao passar o mouse. Teclas: espaço, ← →, ↑ ↓ (volume) e M (mudo). |
 | YouTube Music | Mini player ("tela menor") com capa, faixa, artista, barra de progresso, volume, aleatório, anterior, play, próxima e repetir. Teclas: ↑ ↓ (volume) e M (mudo). |
 | Spotify Web | Mesmo mini player, controlando os botões do próprio Spotify (inclusive a barra de progresso). |
+| SoundCloud e Deezer (ative em "Mais sites" no menu) | Mesmo mini player, com nome, artista e capa da Media Session e os botões do próprio site. |
 | YouTube Shorts, TikTok e Reels do Instagram | Janela em pé (300×533) só com ▲ ▼ na lateral, volume no canto e uma linha fina de progresso. Também passa rolando ou arrastando na janela (↑ ↓ / Page Up / Page Down); clique no vídeo pausa. No menu: "Passar sozinho quando o vídeo acaba". No Instagram vale também para a página inicial; no perfil (grade de posts) a extensão fica desligada. O ícone de flutuar aparece no canto do vídeo ao passar o mouse. |
 | Streaming (Netflix, Prime Video, Disney+, Globoplay...) | Quando o site mostra "Pular abertura" ou "Próximo episódio", o botão aparece também na janela. Se o site cria outro vídeo para o próximo episódio, a janela passa a mostrar o novo. |
 
@@ -57,7 +58,7 @@ Os botões de aleatório e repetir acionam os do próprio site e mostram o estad
 | Acesso a youtube.com, music.youtube.com e open.spotify.com | Mostrar o botão Flutuar e o atalho Alt+P nesses sites. |
 | `activeTab` + `scripting` | Em qualquer outro site, carregar a extensão só na aba atual e só quando você usa o menu do botão direito ou um atalho. |
 | `contextMenus` | Item "Abrir na janela flutuante" no botão direito. |
-| `storage` | Guardar suas preferências (tamanho da janela, auto-avançar) e quantas vezes a janela abriu (para o pedido de avaliação, uma vez só). |
+| `storage` | Guardar suas preferências (tamanho da janela de cada tipo, tamanho da legenda por site, auto-avançar) e quantas vezes a janela abriu (para o pedido de avaliação, uma vez só). |
 | Streamings, tiktok.com e instagram.com (**opcional**) | Só se você ativar no menu: ícone na barra do player e Alt+P nesses sites. Dá para desativar no mesmo lugar. |
 
 ## Limitações conhecidas
@@ -72,3 +73,13 @@ Os botões de aleatório e repetir acionam os do próprio site e mostram o estad
 O FloatMini é gratuito e mantido no tempo livre. Se ele te ajuda, considere [pagar um café](https://buymeacoffee.com/jorgelana).
 
 [![Buy me a coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=jorgelana&button_colour=5F7FFF&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00)](https://buymeacoffee.com/jorgelana)
+
+
+## Novidades da 3.1
+
+- **Idiomas:** menu, janela flutuante e nome da extensão em português, inglês e espanhol (segue o idioma do navegador).
+- **Música:** "A seguir: próxima música" nos últimos 15 segundos (YouTube Music); mini player no SoundCloud e no Deezer.
+- **Streaming:** título do episódio em cima ao mexer o mouse; botões A− / A+ para o tamanho da legenda (lembrado por site).
+- **Vídeos curtos:** dois cliques no vídeo curtem pelo botão do próprio site (só curtem, nunca descurtem).
+- **Janela:** lembra o último tamanho, separado para vídeo, música e vídeo curto. A posição na tela é o navegador que decide.
+- **Menu:** link "Relatar problema" (formulário no GitHub).

@@ -1,0 +1,17 @@
+{
+  "extName": {
+    "message": "FloatMini - Always-on-Top Floating Window"
+  },
+  "extDescription": {
+    "message": "Always-on-top mini floating window for YouTube, YouTube Music, Spotify and web videos."
+  },
+  "actionTitle": {
+    "message": "FloatMini - Always-on-top floating window"
+  },
+  "commandToggle": {
+    "message": "Open/close the floating window on any site"
+  },
+  "menuOpen": {
+    "message": "Open in floating window (FloatMini)"
+  }
+}

@@ -16,7 +16,7 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
-      title: 'Abrir na janela flutuante (FloatMini)',
+      title: chrome.i18n?.getMessage?.('menuOpen') || 'Abrir na janela flutuante (FloatMini)',
       contexts: ['page', 'video', 'audio']
     });
   });

@@ -1,0 +1,17 @@
+{
+  "extName": {
+    "message": "FloatMini - Janela Flutuante Always-on-Top"
+  },
+  "extDescription": {
+    "message": "Mini janela flutuante sempre no topo para YouTube, YouTube Music, Spotify e vídeos da web."
+  },
+  "actionTitle": {
+    "message": "FloatMini - Janela flutuante sempre no topo"
+  },
+  "commandToggle": {
+    "message": "Abrir/fechar a janela flutuante em qualquer site"
+  },
+  "menuOpen": {
+    "message": "Abrir na janela flutuante (FloatMini)"
+  }
+}

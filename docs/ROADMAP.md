@@ -4,7 +4,7 @@
 
 Na imagem, o que é novo está com contorno amarelo tracejado.
 
-## 3.0 — pronto (aguardando lançamento)
+## 3.0 — lançado
 
 **Correções de bugs** — lista em [`BUGS.md`](BUGS.md).
 
@@ -21,7 +21,7 @@ Na imagem, o que é novo está com contorno amarelo tracejado.
 6. **Atalho em qualquer site** — atalho global Alt+Shift+P (Netflix, Globoplay, qualquer site), sem permissão nova.
 7. **Pedir avaliação** — depois de alguns usos, aparece no menu um "Gostou? Avalie na loja", discreto e uma vez só (loja certa: Chrome ou Firefox).
 
-## 3.1 — depois
+## 3.1 — lançado
 
 1. **Inglês e espanhol** — menu, janela flutuante e páginas das lojas traduzidos (`_locales`).
 2. **"A seguir" no fim da música** — nos últimos segundos da faixa, o mini player mostra a próxima música da fila.
@@ -30,12 +30,12 @@ Na imagem, o que é novo está com contorno amarelo tracejado.
 5. **Lembrar tamanho e lugar da janela** — separado para vídeo, música e vídeo curto.
 6. **Mini player para mais sites de música** — SoundCloud e Deezer.
 7. **Curtir com duplo clique** no feed — por último: mexe na conta e os sites mudam com frequência.
-8. **Avançar/voltar por site** — conferir em cada streaming (Max, Globoplay, Disney+, Prime) se mudar o tempo direto funciona ou se precisa da API do player, como na Netflix.
+8. **Avançar/voltar por site** — conferir em cada streaming (Max, Globoplay, Disney+, Prime) se mudar o tempo direto funciona ou se precisa da API do player, como na Netflix. *(Ainda depende de teste em cada site; a Netflix já usa a API do player.)*
 
 ## Projeto (sugestões, a decidir)
 
-1. **Atualizar as Actions** para `@v5` (aviso de Node 20 obsoleto) — edição manual nos workflows.
-2. **Dependabot** para npm e GitHub Actions.
-3. **Formulário de bug** (issue template) e link "Relatar problema" no menu da extensão.
+1. **Atualizar as Actions** para `@v5` (aviso de Node 20 obsoleto) — edição manual nos workflows. *(O Dependabot já vai abrir PRs para isso.)*
+2. ~~Dependabot~~ — feito na 3.1 (`.github/dependabot.yml`).
+3. ~~Formulário de bug e link "Relatar problema"~~ — feito na 3.1.
 4. **Página no GitHub Pages** com links das lojas e política de privacidade.
 5. **Página da Chrome Web Store em inglês** (texto pronto em `store/LISTING.md`).
