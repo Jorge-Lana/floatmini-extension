@@ -21,9 +21,15 @@
   let lastPageInput = 0; // último clique/rolagem da pessoa nesta página
   const PAGE_INPUT_MS = 1500;
 
+  // Nos Shorts o player é outro (#shorts-player); o #movie_player pode ter
+  // ficado escondido de um vídeo aberto antes.
   const player = () => {
-    const p = document.getElementById('movie_player');
-    return p && typeof p.setVolume === 'function' ? p : null;
+    const ids = location.pathname.startsWith('/shorts') ? ['shorts-player', 'movie_player'] : ['movie_player'];
+    for (const id of ids) {
+      const p = document.getElementById(id);
+      if (p && typeof p.setVolume === 'function') return p;
+    }
+    return null;
   };
 
   function sliders() {

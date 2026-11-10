@@ -1181,3 +1181,61 @@ test('janela em inglês e espanhol conforme o idioma do navegador', async () => 
     assert.ok(titles.includes(next), `${lang}: ${titles.join(' | ')}`);
   }
 });
+
+test('idioma sem tradução (ex.: francês) usa o inglês, não o português', async () => {
+  const page = loadPage({ url: 'https://www.youtube.com/watch?v=a', html: YT_HTML, active: true, lang: 'fr-FR' });
+  fakeMedia(page.document.querySelector('video'));
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const titles = [...docPip.window.document.querySelectorAll('.fm-btn')].map((b) => b.title);
+  assert.ok(titles.includes('Forward 10 seconds (→)'), titles.join(' | '));
+});
+
+test('feed: fechar a janela no meio da troca não leva o vídeo embora da página', async () => {
+  const html = `<div id="feed">
+    <div class="item"><video id="v1"></video><span id="depois"></span></div>
+    <div class="item"><video id="v2"></video></div>
+  </div><button data-e2e="arrow-down">↓</button>`;
+  const page = loadPage({ url: 'https://www.tiktok.com/foryou', html, active: true });
+  const m1 = fakeMedia(page.document.getElementById('v1'), { duration: 20 });
+  const m2 = fakeMedia(page.document.getElementById('v2'), { duration: 15, paused: true });
+  page.document.querySelector('[data-e2e="arrow-down"]').addEventListener('click', () => {
+    m1.paused = true;
+    m2.paused = false;
+  });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipWindow = docPip.window;
+  pipWindow.document.querySelector('.fm-stage').dispatchEvent(new pipWindow.WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true }));
+  pipWindow.close(); // fecha antes de o site terminar a troca
+  await new Promise((r) => setTimeout(r, 400));
+  assert.ok(page.document.querySelector('#feed .item video#v1'), 'v1 continua na página');
+  assert.ok(page.document.querySelector('#feed .item video#v2'), 'v2 continua na página');
+  assert.equal(page.document.getElementById('v1').nextElementSibling.id, 'depois', 'v1 no mesmo lugar');
+});
+
+test('menu: ±10 s funciona com o vídeo na janela flutuante', async () => {
+  const page = loadPage({ url: 'https://www.youtube.com/watch?v=a', html: YT_HTML, active: true });
+  const media = fakeMedia(page.document.querySelector('video'), { duration: 100, currentTime: 20 });
+  fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  assert.equal(await page.send({ action: 'SEEK', seconds: 10 }), 'ok');
+  assert.equal(media.currentTime, 30);
+});
+
+test('Shorts: ícone em cima do vídeo (não há barra do player comum)', async () => {
+  const page = loadPage({ url: 'https://www.youtube.com/shorts/abc', html: '<div id="shorts-player"><video></video></div>' });
+  assert.ok(page.document.getElementById('floatmini-video-btn'), 'ícone do feed criado');
+  assert.equal(page.document.getElementById('floatmini-trigger-btn'), null);
+});
+
+test('Spotify: duração como tempo restante ("-2:00") não zera a barra', async () => {
+  const html = `<footer data-testid="now-playing-bar">
+    <span data-testid="playback-position">1:00</span><span data-testid="playback-duration">-2:00</span>
+  </footer>`;
+  const page = loadPage({ url: 'https://open.spotify.com/', html, active: true });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const width = parseFloat(docPip.window.document.querySelector('.fm-bar').style.width);
+  assert.ok(Math.abs(width - 33.33) < 0.5, `barra em ${width}%`);
+});
