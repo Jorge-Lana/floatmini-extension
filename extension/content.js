@@ -172,7 +172,8 @@
       return 'pt';
     }
   })();
-  const L = (pt) => I18N[pt]?.[UI_LANG] ?? pt;
+  // Português fica como está; qualquer outro idioma sem tradução usa o inglês.
+  const L = (pt) => (UI_LANG === 'pt' ? pt : I18N[pt]?.[UI_LANG] ?? I18N[pt]?.en ?? pt);
 
   const VIDEO_AUTO_SIZE = { width: 480, height: 270 };
   const MUSIC_WIDGET_SIZE = { width: 360, height: 172 };
@@ -219,6 +220,10 @@
     if (area !== 'local') return;
     if (changes.pipSize) settings.pipSize = changes.pipSize.newValue || 'auto';
     if (changes.feedAutoAdvance) settings.feedAutoAdvance = !!changes.feedAutoAdvance.newValue;
+    // Outra aba salvou um tamanho/legenda: sem isto, a próxima gravação
+    // desta aba apagaria o que a outra guardou.
+    if (changes.windowSizes) settings.windowSizes = changes.windowSizes.newValue || {};
+    if (changes.captionScale) settings.captionScale = changes.captionScale.newValue || {};
   });
 
   // Conta quantas vezes a janela abriu (o menu usa para pedir avaliação).
@@ -702,10 +707,13 @@
         const label = $('[data-testid="control-button-playpause"]')?.getAttribute('aria-label') || '';
         return /paus/i.test(label); // "Pausar" / "Pause" = está tocando
       },
-      progress: () => ({
-        current: parseClock($('[data-testid="playback-position"]')?.textContent),
-        total: parseClock($('[data-testid="playback-duration"]')?.textContent)
-      }),
+      progress: () => {
+        const current = parseClock($('[data-testid="playback-position"]')?.textContent);
+        const text = ($('[data-testid="playback-duration"]')?.textContent || '').trim();
+        // Com "tempo restante" ligado o Spotify mostra "-2:10".
+        const value = parseClock(text.replace(/^[-−–]\s*/, ''));
+        return { current, total: /^[-−–]/.test(text) ? current + value : value };
+      },
       // A barra de progresso do Spotify é um <input type=range> controlado pelo React.
       seek: (fraction) => {
         const input = $('[data-testid="playback-progressbar"] input[type="range"]');
@@ -1070,14 +1078,15 @@
 
   function findSiteAction(video) {
     // YouTube fica de fora (não tem abertura; e "pular" lá é anúncio).
-    if (SITE !== 'other' && SITE !== 'netflix') return null;
+    if ((SITE !== 'other' && SITE !== 'netflix') || isFeedPage()) return null;
     const nearEnd = !!video && (video.ended || (video.duration > 0 && video.duration - video.currentTime <= NEXT_TEXT_LAST_SECONDS));
     for (const { kind, selector } of SITE_ACTIONS) {
       const node = [...document.querySelectorAll(selector)].find(isVisible);
       if (node) return { kind, node, label: shortLabel(nodeText(node), kind) };
     }
     for (const node of document.querySelectorAll('button, [role="button"], a')) {
-      const text = `${nodeText(node)} ${node.getAttribute('aria-label') || ''}`;
+      // textContent não força o navegador a recalcular a página (innerText sim).
+      const text = `${(node.textContent || '').trim()} ${node.getAttribute('aria-label') || ''}`;
       if (text.length > 80 || /an[úu]ncio|\bads?\b/i.test(text)) continue;
       const kind = SKIP_TEXT.test(text) ? 'skip' : NEXT_TEXT.test(text) && nearEnd ? 'next' : null;
       if (kind && isVisible(node)) return { kind, node, label: shortLabel(nodeText(node), kind) };
@@ -1199,6 +1208,10 @@
     });
   }
 
+  // Vídeo que está na janela flutuante agora (ele sai da página, então a
+  // busca normal não o encontra).
+  let floatingVideo = null;
+
   function buildVideoWindow(pipWindow, video) {
     const doc = preparePipDocument(pipWindow, 'fm-video');
     const wasPlaying = !video.paused;
@@ -1241,6 +1254,7 @@
         }
         mirrorAudio = captured.firefox;
         mirror.muted = !mirrorAudio;
+        stopMirror();
         mirror.srcObject = captured.stream;
         syncMirrorAudio();
         mirror.play?.()?.catch?.(() => {});
@@ -1256,8 +1270,15 @@
       originalParent.insertBefore(placeholder, v);
       stage.append(v);
     };
+    const stopMirror = () => {
+      const stream = mirror?.srcObject;
+      if (!stream) return;
+      mirror.srcObject = null;
+      for (const t of stream.getTracks?.() || []) t.stop();
+    };
     const unpark = (v) => {
       if (mirror) return true; // o original nunca saiu da página
+      if (!stage.contains(v)) return true; // já está de volta na página
       let placed = true;
       if (placeholder?.isConnected) placeholder.replaceWith(v);
       else if (originalParent?.isConnected) originalParent.append(v);
@@ -1344,6 +1365,7 @@
       renderTime(video.currentTime);
     });
     let switching = false; // trocando de vídeo no feed
+    let closed = false; // janela fechada
     let lastTime = 0;
     let autoAdvanceAfter = 0;
     const onTime = () => {
@@ -1487,10 +1509,12 @@
         // novo vídeo da tela depois de um tempinho e a janela dá o play.
         return changed && (!v.paused || elapsed > 1500) ? v : null;
       }, 4000);
+      switching = false;
+      // A janela fechou enquanto o site trocava de vídeo: fica tudo na página.
+      if (closed) return;
       const target = next || old;
       if (target !== old && !old.paused) old.pause();
       adopt(target, { muted, level });
-      switching = false;
     }
 
     // Traz um vídeo da página para a janela, com o mesmo volume.
@@ -1515,7 +1539,7 @@
     // Se o da janela parou e há outro tocando na página, a janela passa a
     // mostrar o novo.
     function followNewEpisode() {
-      if (switching || isFeedPage() || (SITE !== 'other' && SITE !== 'netflix')) return;
+      if (closed || switching || isFeedPage() || (SITE !== 'other' && SITE !== 'netflix')) return;
       if (!video.paused && !video.ended) return;
       const next = [...document.querySelectorAll('video')].find((v) => !v.paused && v.duration > 30);
       if (!next) return;
@@ -1609,15 +1633,19 @@
 
     if (wasPlaying && video.paused) video.play().catch(() => {});
 
+    floatingVideo = () => video;
     pipWindow.addEventListener('pagehide', () => {
+      closed = true;
+      floatingVideo = null;
       clearInterval(timer);
       clearInterval(captionTimer);
       clearTimeout(idleTimer);
+      clearTimeout(tapTimer);
       releaseSiteVolume();
       unbind(video);
       const playing = !video.paused;
       unpark(video);
-      if (mirror) mirror.srcObject = null;
+      stopMirror();
       if (playing && video.paused) video.play().catch(() => {});
     });
   }
@@ -1950,7 +1978,18 @@
     });
   }
 
-  async function toggleFloat() {
+  let opening = false; // pedido de janela em andamento
+  async function toggleFloat(preferred = null) {
+    if (opening) return 'opening';
+    opening = true;
+    try {
+      return await toggleFloatNow(preferred);
+    } finally {
+      opening = false;
+    }
+  }
+
+  async function toggleFloatNow(preferred) {
     const docPip = window.documentPictureInPicture;
     if (docPip?.window) {
       docPip.window.close();
@@ -1962,7 +2001,9 @@
     }
 
     if (isInstagramProfile()) return 'no_media';
-    const video = IS_MUSIC_SITE ? null : findMainVideo();
+    // Fora dos feeds, o ícone em cima de um vídeo abre aquele vídeo.
+    const hovered = preferred?.isConnected && !isFeedPage() ? preferred : null;
+    const video = IS_MUSIC_SITE ? null : hovered || findMainVideo();
     if (!IS_MUSIC_SITE && !video) {
       showToast(L('Nenhum vídeo encontrado nesta página.'));
       return 'no_media';
@@ -1971,7 +2012,7 @@
     // O navegador só abre janelas flutuantes logo após um clique ou tecla
     // NA PÁGINA. Pedidos vindos do popup/menu/atalho global não contam.
     if (navigator.userActivation && !navigator.userActivation.isActive) {
-      showClickPrompt();
+      showClickPrompt(preferred);
       return 'needs_click';
     }
     hideClickPrompt();
@@ -2017,7 +2058,7 @@
     document.getElementById('floatmini-prompt')?.remove();
   }
 
-  function showClickPrompt() {
+  function showClickPrompt(preferred = null) {
     hideClickPrompt();
     const btn = document.createElement('button');
     btn.id = 'floatmini-prompt';
@@ -2042,7 +2083,7 @@
       e.preventDefault();
       e.stopPropagation();
       hideClickPrompt();
-      toggleFloat();
+      toggleFloat(preferred);
     });
     document.documentElement.append(btn);
     promptTimer = setTimeout(hideClickPrompt, 10000);
@@ -2111,8 +2152,11 @@
     btn.style.top = `${Math.round(Math.max(rect.top, 0) + 10)}px`;
   }
 
+  let lastPointerCheck = 0;
   function onPagePointer(e) {
-    if (!overlayBtn || isInstagramProfile() || window.documentPictureInPicture?.window) return;
+    if (!overlayBtn || Date.now() - lastPointerCheck < 100) return;
+    lastPointerCheck = Date.now();
+    if (isInstagramProfile() || window.documentPictureInPicture?.window) return;
     if (nativeButton?.isConnected && !IS_INSTAGRAM && !IS_TIKTOK) return;
     if (e.target === overlayBtn || overlayBtn.contains(e.target)) return;
     const hit = [...document.querySelectorAll('video')].find((v) => {
@@ -2284,7 +2328,8 @@
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      toggleFloat().finally(() => setTimeout(updateNativeButtonState, 100));
+      const hovered = btn === overlayBtn ? overlayVideo : null;
+      toggleFloat(hovered).finally(() => setTimeout(updateNativeButtonState, 100));
     });
     return btn;
   }
@@ -2328,6 +2373,9 @@
       // YouTube Music sem barra reconhecível: volta para o botão no canto.
       if (nativeOk || SITE === 'youtube') {
         document.getElementById('floatmini-trigger-btn')?.remove();
+        // Shorts não tem a barra do player comum: ícone em cima do vídeo.
+        if (!nativeOk && isFeedPage()) ensureOverlayButton();
+        else if (overlayBtn) overlayBtn.style.display = 'none';
         return;
       }
     }
@@ -2422,7 +2470,7 @@
         toggleFloat().then(reply, () => reply('failed'));
         return true;
       case 'SEEK': {
-        const video = findMainVideo();
+        const video = floatingVideo?.() || findMainVideo();
         if (!video || SITE === 'spotify') {
           reply('no_media');
         } else {

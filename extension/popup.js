@@ -92,9 +92,11 @@ const LANG = (() => {
     return 'pt';
   }
 })();
-const T = (key) => POPUP_I18N[LANG]?.[key] ?? PT_TEXT[key] ?? key;
-if (POPUP_I18N[LANG]) {
-  document.documentElement.lang = LANG;
+// Português fica como está; idioma sem tradução usa o inglês.
+const TEXT_LANG = LANG === 'pt' ? 'pt' : POPUP_I18N[LANG] ? LANG : 'en';
+const T = (key) => POPUP_I18N[TEXT_LANG]?.[key] ?? PT_TEXT[key] ?? key;
+if (POPUP_I18N[TEXT_LANG]) {
+  document.documentElement.lang = TEXT_LANG;
   for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = T(node.dataset.i18n);
   // Textos fixos da própria extensão (com <kbd>/<svg>), nunca vindos de fora.
   for (const node of document.querySelectorAll('[data-i18n-html]')) {
@@ -109,21 +111,24 @@ const STATUS_TEXT = {
     needs_click: 'Clique no botão azul que apareceu na página para abrir a janela.',
     no_media: 'Nenhum vídeo encontrado nesta aba.',
     failed: 'O navegador não permitiu abrir a janela flutuante nesta página.',
-    not_found: 'Esse controle não existe nesta página.'
+    not_found: 'Esse controle não existe nesta página.',
+    blocked: 'Esta página não aceita extensões (ex.: chrome:// ou a loja do Chrome). Abra um site com vídeo.'
   },
   en: {
     needs_click: 'Click the blue button on the page to open the window.',
     no_media: 'No video found in this tab.',
     failed: 'The browser did not allow the floating window on this page.',
-    not_found: "This control doesn't exist on this page."
+    not_found: "This control doesn't exist on this page.",
+    blocked: 'This page does not accept extensions (e.g. chrome:// or the Chrome Web Store). Open a site with video.'
   },
   es: {
     needs_click: 'Haz clic en el botón azul de la página para abrir la ventana.',
     no_media: 'No se encontró ningún video en esta pestaña.',
     failed: 'El navegador no permitió abrir la ventana flotante en esta página.',
-    not_found: 'Este control no existe en esta página.'
+    not_found: 'Este control no existe en esta página.',
+    blocked: 'Esta página no acepta extensiones (p. ej. chrome:// o la tienda de Chrome). Abre un sitio con video.'
   }
-}[POPUP_I18N[LANG] ? LANG : 'pt'];
+}[TEXT_LANG];
 
 function showStatus(text, kind = 'info') {
   statusEl.textContent = text;
@@ -153,7 +158,7 @@ async function run(message) {
       showStatus(STATUS_TEXT[status]);
     }
   } catch {
-    showStatus('Esta página não aceita extensões (ex.: chrome:// ou a loja do Chrome). Abra um site com vídeo.', 'error');
+    showStatus(STATUS_TEXT.blocked, 'error');
   }
 }
 
