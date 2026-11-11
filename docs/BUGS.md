@@ -23,6 +23,7 @@ Lista dos bugs relatados. As correções entram no PR "Correções de bugs" e sa
 | 17 | Corrigido na 3.1.1 | Streamings e outros sites | A procura por "Pular abertura"/"Próximo episódio" lia o texto de todos os botões e links da página a cada 0,6 s de um jeito pesado; e rodava também no TikTok/Instagram. Ficou leve e fora dos feeds. O ícone em cima do vídeo também media todos os vídeos a cada movimento do mouse. | 3.1.0 (análise) |
 | 18 | Corrigido na 3.1.1 | Sites com vários vídeos | O ícone em cima de um vídeo abria outro (o que estava tocando ou o maior). Agora abre o vídeo em que o mouse está. | 3.1.0 (análise) |
 | 19 | Corrigido na 3.1.1 | TikTok | O espelho do vídeo (`captureStream`) não era encerrado ao trocar de vídeo ou fechar a janela. | 3.1.0 (análise) |
+| 22 | Corrigido na 3.1.1 | Janela de vídeo | Com o foco no volume ou na linha do tempo, ← → avançavam o vídeo e mexiam junto no controle deslizante (o volume mudava sozinho). As setas também pulavam 5 s, e a dica do botão dizia 10 s; agora são 10 s. | 3.1.0 (análise) |
 | 20 | Aberto | Todos | Depois que a extensão atualiza, abas já abertas ficam com o script antigo: o ícone continua funcionando, mas o botão direito e o Alt+Shift+P só voltam ao recarregar a aba. | 3.1.0 (análise) |
 | 21 | Aberto — testar | TikTok no Firefox | O som passa pelo espelho; ao fechar a janela o vídeo original pode ficar mudo até o próximo vídeo (comportamento do `mozCaptureStream`). | 3.1.0 (análise) |
 

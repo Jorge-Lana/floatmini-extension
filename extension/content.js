@@ -1555,9 +1555,13 @@
         e.preventDefault();
         video.paused ? video.play() : video.pause();
       } else if (e.code === 'ArrowLeft') {
-        seekBy(video, -5);
+        // preventDefault: com o foco no volume/linha do tempo, a seta mexeria
+        // também no controle deslizante.
+        e.preventDefault();
+        seekBy(video, -10);
       } else if (e.code === 'ArrowRight') {
-        seekBy(video, 5);
+        e.preventDefault();
+        seekBy(video, 10);
       } else if ((e.code === 'ArrowDown' || e.code === 'PageDown') && isFeedPage()) {
         // No feed as setas passam de vídeo, como no próprio site.
         e.preventDefault();
@@ -2157,6 +2161,8 @@
     if (!overlayBtn || Date.now() - lastPointerCheck < 100) return;
     lastPointerCheck = Date.now();
     if (isInstagramProfile() || window.documentPictureInPicture?.window) return;
+    // YouTube: o ícone em cima do vídeo é só dos Shorts (não das prévias da página inicial).
+    if (SITE === 'youtube' && !isFeedPage()) return;
     if (nativeButton?.isConnected && !IS_INSTAGRAM && !IS_TIKTOK) return;
     if (e.target === overlayBtn || overlayBtn.contains(e.target)) return;
     const hit = [...document.querySelectorAll('video')].find((v) => {
