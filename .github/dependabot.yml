@@ -1,8 +1,8 @@
-# Abre PRs sozinho quando sai atualização de dependências (npm) e das Actions.
+# Abre PRs sozinho quando sai atualização de dependências (bun) e das Actions.
 # Com a proteção da main, só entram depois que o CI passar.
 version: 2
 updates:
-  - package-ecosystem: npm
+  - package-ecosystem: bun
     directory: /
     schedule:
       interval: weekly
