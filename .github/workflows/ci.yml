@@ -44,7 +44,7 @@ jobs:
           npx --yes web-ext@10 lint --source-dir /tmp/firefox
 
       - name: Guardar pacotes
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: floatmini-pacotes
           path: dist-extension/*.zip
