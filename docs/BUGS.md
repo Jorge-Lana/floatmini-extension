@@ -24,6 +24,7 @@ Lista dos bugs relatados. As correções entram no PR "Correções de bugs" e sa
 | 18 | Corrigido na 3.1.1 | Sites com vários vídeos | O ícone em cima de um vídeo abria outro (o que estava tocando ou o maior). Agora abre o vídeo em que o mouse está. | 3.1.0 (análise) |
 | 19 | Corrigido na 3.1.1 | TikTok | O espelho do vídeo (`captureStream`) não era encerrado ao trocar de vídeo ou fechar a janela. | 3.1.0 (análise) |
 | 22 | Corrigido na 3.1.1 | Janela de vídeo | Com o foco no volume ou na linha do tempo, ← → avançavam o vídeo e mexiam junto no controle deslizante (o volume mudava sozinho). As setas também pulavam 5 s, e a dica do botão dizia 10 s; agora são 10 s. | 3.1.0 (análise) |
+| 23 | Corrigido (próxima versão) | YouTube (Chrome) | Legenda aparecia na janela com o CC desligado (recarregar a página resolvia). Causa provável: o YouTube deixa o texto da legenda escondido na página e a janela copiava. Agora segue o botão CC do player e ignora texto escondido. | 3.1.1 |
 | 20 | Aberto | Todos | Depois que a extensão atualiza, abas já abertas ficam com o script antigo: o ícone continua funcionando, mas o botão direito e o Alt+Shift+P só voltam ao recarregar a aba. | 3.1.0 (análise) |
 | 21 | Aberto — testar | TikTok no Firefox | O som passa pelo espelho; ao fechar a janela o vídeo original pode ficar mudo até o próximo vídeo (comportamento do `mozCaptureStream`). | 3.1.0 (análise) |
 

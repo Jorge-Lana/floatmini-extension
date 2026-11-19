@@ -518,10 +518,20 @@
     return found;
   }
 
+  // YouTube com o botão de legenda (CC) desligado: nenhuma legenda na janela.
+  // O site pode deixar o texto da legenda anterior escondido na página.
+  function youtubeCaptionsOff() {
+    if (SITE !== 'youtube') return false;
+    const cc = document.querySelector('#movie_player .ytp-subtitles-button, .ytp-subtitles-button');
+    return cc?.getAttribute('aria-pressed') === 'false';
+  }
+
   function readSiteCaptions(video, anchor, readNearby) {
+    if (youtubeCaptionsOff()) return '';
     for (const sel of CAPTION_SELECTORS) {
       const lines = [];
       for (const node of document.querySelectorAll(sel)) {
+        if (!isVisible(node)) continue; // texto escondido não é legenda na tela
         const text = nodeText(node);
         if (text && !lines.includes(text)) lines.push(text);
       }
@@ -529,6 +539,7 @@
     }
     // Em feeds (TikTok, Reels) o texto do post fica perto do vídeo e
     // pareceria legenda: lá só vale a faixa de legenda.
+    if (SITE === 'youtube' || SITE === 'youtube-music') return '';
     return readTrackCaptions(video) || (isFeedPage() ? '' : readNearby(anchor));
   }
 
