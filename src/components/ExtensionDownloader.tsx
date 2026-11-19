@@ -4,7 +4,7 @@ import {
   CheckCircle,
   Copy,
   FolderArchive,
-  Chrome,
+  Globe as Chrome,
   Compass,
   ArrowRight,
   ExternalLink,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Youtube, Music, Radio, Tv, Link as LinkIcon, Plus, Check } from 'lucide-react';
+import { MonitorPlay as Youtube, Music, Radio, Tv, Link as LinkIcon, Plus, Check } from 'lucide-react';
 import { MediaTrack, PlatformType } from '../types';
 import { MEDIA_PRESETS } from '../data/mediaPresets';
 
