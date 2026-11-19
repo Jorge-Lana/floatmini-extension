@@ -1239,3 +1239,17 @@ test('Spotify: duração como tempo restante ("-2:00") não zera a barra', async
   const width = parseFloat(docPip.window.document.querySelector('.fm-bar').style.width);
   assert.ok(Math.abs(width - 33.33) < 0.5, `barra em ${width}%`);
 });
+
+test('YouTube: com o CC desligado, legenda escondida não vai para a janela', async () => {
+  const html = YT_HTML.replace('<div class="ytp-chrome-bottom"></div>', `<div class="ytp-chrome-bottom"><button class="ytp-subtitles-button" aria-pressed="false"></button></div>
+    <div class="ytp-caption-window-container"><span class="caption-visual-line">texto antigo</span></div>`);
+  const page = loadPage({ url: 'https://www.youtube.com/watch?v=a', html, active: true });
+  fakeMedia(page.document.querySelector('video'));
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(docPip.window.document.querySelector('.fm-captions').textContent, '');
+  page.document.querySelector('.ytp-subtitles-button').setAttribute('aria-pressed', 'true');
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(docPip.window.document.querySelector('.fm-captions').textContent, 'texto antigo');
+});
