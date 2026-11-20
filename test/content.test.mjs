@@ -1253,3 +1253,21 @@ test('YouTube: com o CC desligado, legenda escondida não vai para a janela', as
   await new Promise((r) => setTimeout(r, 300));
   assert.equal(docPip.window.document.querySelector('.fm-captions').textContent, 'texto antigo');
 });
+
+test('YouTube Music: miniplayer escondido não tira o botão da barra visível', () => {
+  const html = `<ytmusic-miniplayer hidden><div class="ytMusicMiniPlayerRightSection"></div></ytmusic-miniplayer>
+    <ytmusic-playlist-shelf-renderer><ytmusic-responsive-list-item-renderer>
+      <span>CYCLONADO SUBMUNDO</span><button aria-label="Gostei"></button><button aria-label="Não gostei"></button>
+    </ytmusic-responsive-list-item-renderer></ytmusic-playlist-shelf-renderer>
+    <ytmusic-player-bar>
+      <div class="middle-controls"><div class="middle-controls-buttons">
+        <ytmusic-like-button-renderer id="like-button-renderer"></ytmusic-like-button-renderer>
+      </div></div>
+      <div id="right-controls"><div class="right-controls-buttons"></div></div>
+    </ytmusic-player-bar>`;
+  const page = loadPage({ url: 'https://music.youtube.com/playlist?list=x', html });
+  const btn = page.document.getElementById('floatmini-native-btn');
+  assert.ok(btn);
+  assert.ok(btn.closest('ytmusic-player-bar'), 'na barra do player');
+  assert.equal(btn.closest('ytmusic-responsive-list-item-renderer'), null, 'fora da playlist');
+});
