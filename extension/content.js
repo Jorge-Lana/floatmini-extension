@@ -282,14 +282,20 @@
   }
   const deep$ = (selector, base = document) => deepAll(selector, base)[0] || null;
 
+  // O YouTube Music pode ter as duas barras na página (uma escondida):
+  // prefere a que está na tela.
   function findYtMusicBar() {
-    return (
-      deep$('ytmusic-miniplayer') ||
-      deep$('ytmusic-player-bar') ||
-      deep$('#play-pause-button')?.closest('ytmusic-player-bar, footer, [class*="player-bar"]') ||
-      null
-    );
+    const found = [
+      ...deepAll('ytmusic-miniplayer'),
+      ...deepAll('ytmusic-player-bar'),
+      deep$('#play-pause-button')?.closest('ytmusic-player-bar, footer, [class*="player-bar"]')
+    ].filter(Boolean);
+    return found.find(isVisible) || found[0] || null;
   }
+
+  // Linhas de lista/fila do YouTube Music (têm 👍 próprio no hover).
+  const YTM_LIST_ROWS =
+    'ytmusic-responsive-list-item-renderer, ytmusic-player-queue-item, ytmusic-two-row-item-renderer, ytmusic-shelf-renderer, ytmusic-playlist-shelf-renderer, ytmusic-section-list-renderer';
 
   // Componentes do YouTube (yt-icon-button, tp-yt-paper-icon-button...) às
   // vezes só reagem ao clique no <button> interno.
@@ -2252,7 +2258,10 @@
         const rightSection = deep$('.ytMusicMiniPlayerRightSection', bar);
         add(rightSection, rightSection?.firstChild);
         // Antes do "gostei" (layout intermediário)
-        const like = deep$('ytmusic-like-button-renderer, #like-button-renderer', bar);
+        const like = deep$(
+          'ytmusic-like-button-renderer, #like-button-renderer, segmented-like-dislike-button-view-model, like-button-view-model',
+          bar
+        );
         if (like) add(like.parentNode, like);
         const volume = deep$('#expand-volume, ytmusic-player-expanding-menu, .volume', bar);
         if (volume) add(volume.parentNode, volume);
@@ -2266,7 +2275,10 @@
         const rect = el.getBoundingClientRect();
         return rect.height > 0 && rect.top > window.innerHeight - 140;
       };
-      const labeled = deepAll('[aria-label]').filter(nearBottom);
+      // Nunca numa linha de playlist/fila (o 👍 delas aparece no hover).
+      const labeled = deepAll('[aria-label]', bar && isVisible(bar) ? bar : document)
+        .filter((el) => nearBottom(el) && !el.closest(YTM_LIST_ROWS))
+        .sort((a, b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top);
       const isDislike = (el) => /(não gostei|dislike)/i.test(el.getAttribute('aria-label'));
       const like = labeled.find((el) => !isDislike(el) && /(gostei|\blike\b|curtir)/i.test(el.getAttribute('aria-label')));
       const dislike = labeled.find(isDislike);
@@ -2365,6 +2377,8 @@
 
     if (SITE === 'youtube' || SITE === 'youtube-music') {
       let btn = nativeButton;
+      // Botão que foi parar numa linha de playlist: tira e encaixa de novo.
+      if (btn && SITE === 'youtube-music' && btn.closest(YTM_LIST_ROWS)) btn.remove();
       if (!btn || !isVisible(btn)) {
         btn = nativeButton = btn || createNativeButton();
         // Testa cada lugar até o botão ficar visível.
