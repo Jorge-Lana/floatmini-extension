@@ -139,13 +139,24 @@
 
   // O site trocou o volume: confere na hora e também de tempos em tempos
   // (no YouTube o <video> pode estar na janela flutuante, fora desta página).
+  // Só trabalha com a janela flutuante aberta (ou volume travado): aba do
+  // YouTube sem janela não fica rodando nada.
+  let active = false;
+  document.addEventListener('floatmini:active', (event) => {
+    active = event.detail === 'true';
+    if (active) {
+      lastReport = '';
+      report();
+    }
+  });
   document.addEventListener('volumechange', () => {
     siteChanged();
-    report();
+    if (active) report();
   }, true);
   setInterval(() => {
+    if (!active && !desired) return;
     siteChanged();
-    report();
+    if (active) report();
   }, 700);
 
   // Ir para um ponto da música/vídeo atual (segundos) pela API do player.
