@@ -597,6 +597,19 @@ test('ponte de volume: usa a API do player e desfaz mudanças do site', async ()
   state.volume = 90;
   doc.dispatchEvent(new dom.window.Event('volumechange'));
   assert.equal(state.volume, 90);
+
+  // Só informa volume/tempo com a janela aberta.
+  const reports = [];
+  doc.addEventListener('floatmini:volume-state', (e) => reports.push(JSON.parse(e.detail)));
+  doc.dispatchEvent(new dom.window.Event('volumechange'));
+  assert.equal(reports.length, 0, 'sem janela: nada');
+  doc.dispatchEvent(new dom.window.CustomEvent('floatmini:active', { detail: 'true' }));
+  assert.equal(reports.at(-1)?.percent, 90, 'janela abriu: informa na hora');
+  doc.dispatchEvent(new dom.window.CustomEvent('floatmini:active', { detail: 'false' }));
+  const count = reports.length;
+  state.volume = 40;
+  doc.dispatchEvent(new dom.window.Event('volumechange'));
+  assert.equal(reports.length, count, 'janela fechou: para');
   dom.window.close();
 });
 
@@ -1270,4 +1283,44 @@ test('YouTube Music: miniplayer escondido não tira o botão da barra visível',
   assert.ok(btn);
   assert.ok(btn.closest('ytmusic-player-bar'), 'na barra do player');
   assert.equal(btn.closest('ytmusic-responsive-list-item-renderer'), null, 'fora da playlist');
+});
+
+test('streaming: pausar não troca para uma prévia tocando em outro canto da página', async () => {
+  const html = `<div id="app"><div id="player"><div class="a"><div class="b"><div class="wrap"><video id="v1"></video></div></div></div></div>
+    <section><div><video id="trailer"></video></div></section></div>`;
+  const page = loadPage({ url: 'https://www.exemplo-stream.com/assistir/1', html, active: true });
+  const main = fakeMedia(page.document.getElementById('v1'), { duration: 1200, currentTime: 300 });
+  Object.defineProperty(page.document.getElementById('v1'), 'readyState', { value: 4, configurable: true });
+  const trailer = fakeMedia(page.document.getElementById('trailer'), { duration: 90, paused: true });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  assert.equal(docPip.window.document.querySelector('.fm-stage video').id, 'v1');
+  trailer.paused = false; // prévia começa a tocar sozinha
+  main.paused = true; // a pessoa pausou
+  await new Promise((r) => setTimeout(r, 800));
+  assert.equal(docPip.window.document.querySelector('.fm-stage video').id, 'v1');
+});
+
+test('música: janela baixa usa a faixa compacta com o mesmo nome, capa e play', async () => {
+  const html = `<footer data-testid="now-playing-bar"><div data-testid="now-playing-widget">
+      <a data-testid="context-item-link">Faixa X</a><a data-testid="context-item-info-artist">Artista Y</a>
+      <img data-testid="cover-art-image" src="https://i.example/capa.jpg"></div>
+    <button data-testid="control-button-playpause" aria-label="Pausar"></button>
+    <button data-testid="control-button-skip-forward"></button>
+    <div data-testid="playback-position">1:00</div><div data-testid="playback-duration">3:00</div></footer>`;
+  const page = loadPage({ url: 'https://open.spotify.com/', html, active: true });
+  let nexts = 0;
+  page.document.querySelector('[data-testid="control-button-skip-forward"]').addEventListener('click', () => nexts++);
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  assert.deepEqual([docPip.lastRequest.width, docPip.lastRequest.height], [320, 380], 'tamanho novo padrão');
+  const pipDoc = docPip.window.document;
+  assert.equal(pipDoc.querySelector('.fm-mini-track').textContent, 'Faixa X');
+  assert.equal(pipDoc.querySelector('.fm-mini-artist').textContent, 'Artista Y');
+  assert.equal(pipDoc.querySelector('.fm-mini-cover').src, 'https://i.example/capa.jpg');
+  assert.equal(pipDoc.querySelector('.fm-mini-play').dataset.icon, 'pause');
+  assert.deepEqual([...pipDoc.querySelectorAll('.fm-times span')].map((s) => s.textContent), ['1:00', '3:00']);
+  pipDoc.querySelector('.fm-mini-next').click();
+  assert.equal(nexts, 1);
+  assert.match(pipDoc.querySelector('style').textContent, /@media \(max-height: 200px\)/);
 });

@@ -176,7 +176,7 @@
   const L = (pt) => (UI_LANG === 'pt' ? pt : I18N[pt]?.[UI_LANG] ?? I18N[pt]?.en ?? pt);
 
   const VIDEO_AUTO_SIZE = { width: 480, height: 270 };
-  const MUSIC_WIDGET_SIZE = { width: 360, height: 172 };
+  const MUSIC_WIDGET_SIZE = { width: 320, height: 380 };
   const SPEEDS = [1, 1.25, 1.5, 2];
 
   // ---------------------------------------------------------------------------
@@ -280,7 +280,12 @@
     if (base !== document && base.matches?.(selector)) out.unshift(base);
     return out;
   }
-  const deep$ = (selector, base = document) => deepAll(selector, base)[0] || null;
+  // Primeiro a página normal (rápido); só varre os shadow roots se não achar.
+  // Mesmo resultado de deepAll(...)[0], que começa pela própria página.
+  const deep$ = (selector, base = document) => {
+    if (base !== document && base.matches?.(selector)) return base;
+    return base.querySelector(selector) || deepAll(selector, base)[0] || null;
+  };
 
   // O YouTube Music pode ter as duas barras na página (uma escondida):
   // prefere a que está na tela.
@@ -995,21 +1000,58 @@
     .fm-site-action[hidden] { display: none; }
     body.fm-active .fm-site-action { bottom: 84px; }
 
-    /* Música (YouTube Music / Spotify) */
-    body.fm-music { display: flex; flex-direction: column; padding: 12px; gap: 6px; }
-    .fm-music-main { display: flex; gap: 12px; align-items: center; min-height: 0; flex: 1; }
-    .fm-cover { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #1f1f1f; }
-    .fm-meta { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    /* Música: miniplayer no estilo do Spotify.
+       Janela alta: capa grande com controles por cima, barra e tempos, faixa.
+       Janela baixa (até 200px): faixa compacta com capa, nome, play e próxima. */
+    body.fm-music { display: flex; flex-direction: column; padding: 8px; gap: 0; background: #121212; }
+    .fm-full { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .fm-art { position: relative; flex: 1; min-height: 0; border-radius: 8px; overflow: hidden; background: #1f1f1f; }
+    .fm-art-bg { position: absolute; inset: -20px; background-size: cover; background-position: center; filter: blur(18px) brightness(0.55); }
+    .fm-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+    .fm-art-controls {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: rgba(0, 0, 0, 0.45); opacity: 0; transition: opacity 0.2s ease;
+    }
+    body.fm-music:hover .fm-art-controls, body.fm-paused .fm-art-controls, .fm-art-controls:focus-within { opacity: 1; }
+    .fm-art-controls .fm-btn { color: #fff; opacity: 1; }
+    .fm-art-controls .fm-btn svg { width: 20px; height: 20px; }
+    .fm-art-controls .fm-btn.fm-primary { width: 48px; height: 48px; background: rgba(0, 0, 0, 0.6); color: #fff; }
+    .fm-art-controls .fm-btn.fm-primary:hover { background: rgba(0, 0, 0, 0.8); }
+    .fm-art-controls .fm-btn.fm-primary svg { width: 26px; height: 26px; }
+    .fm-art-controls .fm-btn.fm-toggle { color: rgba(255, 255, 255, 0.7); }
+    .fm-art-controls .fm-btn.fm-toggle.fm-on { color: #1ed760; }
+    .fm-art-controls .fm-btn.fm-toggle.fm-on::after { background: #1ed760; }
+    .fm-art-controls .fm-volume input[type='range'] { width: 0; opacity: 0; transition: width 0.2s ease, opacity 0.2s ease; }
+    .fm-art-controls .fm-volume:hover input[type='range'],
+    .fm-art-controls .fm-volume:focus-within input[type='range'] { width: 56px; opacity: 1; }
+    .fm-progress { height: 3px; background: rgba(255, 255, 255, 0.25); border-radius: 3px; overflow: hidden; transition: height 0.15s ease; }
+    .fm-seek { padding: 7px 0 3px; cursor: pointer; touch-action: none; flex-shrink: 0; }
+    .fm-seek:hover .fm-progress { height: 5px; }
+    .fm-bar { height: 100%; width: 0%; background: #fff; }
+    .fm-seek:hover .fm-bar { background: #1ed760; }
+    .fm-times { display: flex; justify-content: space-between; font-size: 10px; color: #b3b3b3; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+    .fm-meta { min-width: 0; display: flex; flex-direction: column; gap: 1px; padding-top: 4px; flex-shrink: 0; }
     .fm-track { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .fm-artist { font-size: 12px; color: #a3a3a3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fm-artist { font-size: 12px; color: #b3b3b3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .fm-artist[hidden] { display: none; }
     .fm-upnext { font-size: 12px; color: #e5e5e5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: fm-in 0.3s ease; }
     .fm-upnext:empty { display: none; }
     @keyframes fm-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
-    .fm-progress { height: 3px; background: rgba(255, 255, 255, 0.2); border-radius: 3px; overflow: hidden; margin-top: 4px; transition: height 0.15s ease; }
-    .fm-seek { padding: 5px 0; margin: -1px 0 -5px; cursor: pointer; touch-action: none; }
-    .fm-seek:hover .fm-progress { height: 5px; }
-    .fm-bar { height: 100%; width: 0%; background: #fff; }
+    .fm-mini { display: none; align-items: center; gap: 10px; height: 100%; min-width: 0; }
+    .fm-mini-cover { width: 48px; height: 48px; border-radius: 4px; object-fit: cover; flex-shrink: 0; background: #2a2a2a; }
+    .fm-mini-meta { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .fm-mini .fm-btn.fm-primary { width: 44px; height: 44px; flex-shrink: 0; }
+    .fm-mini .fm-btn.fm-primary svg { width: 26px; height: 26px; }
+    .fm-mini .fm-btn { flex-shrink: 0; }
+    .fm-mini .fm-btn svg { width: 24px; height: 24px; }
+    @media (max-height: 200px) {
+      body.fm-music { padding: 8px 12px; }
+      .fm-full { display: none; }
+      .fm-mini { display: flex; }
+    }
+    @media (max-height: 200px) and (max-width: 220px) {
+      .fm-mini-cover { display: none; }
+    }
     .fm-volume { display: flex; align-items: center; gap: 4px; }
     .fm-volume .fm-btn { padding: 4px; }
     .fm-volume .fm-btn svg { width: 18px; height: 18px; }
@@ -1022,11 +1064,6 @@
       -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 0;
     }
     .fm-volume input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 0; }
-    .fm-music .fm-volume { margin-top: 4px; }
-    .fm-music .fm-volume input[type='range'] { flex: 1; width: auto; }
-    .fm-music-controls { display: flex; justify-content: center; align-items: center; gap: 18px; }
-    .fm-music-controls .fm-btn svg { width: 20px; height: 20px; }
-    .fm-music-controls .fm-btn.fm-primary { width: 40px; height: 40px; }
     /* Aleatório/repetir: cinza desligado, branco com pontinho quando ligado. */
     .fm-btn.fm-toggle { color: #737373; position: relative; }
     .fm-btn.fm-toggle.fm-on { color: #fff; opacity: 1; }
@@ -1558,7 +1595,14 @@
     function followNewEpisode() {
       if (closed || switching || isFeedPage() || (SITE !== 'other' && SITE !== 'netflix')) return;
       if (!video.paused && !video.ended) return;
-      const next = [...document.querySelectorAll('video')].find((v) => !v.paused && v.duration > 30);
+      // Pausado pela pessoa: só segue um vídeo novo dentro do mesmo player
+      // (não uma prévia/trailer tocando em outro canto da página).
+      const finished = video.ended || video.readyState === 0 || !video.currentSrc;
+      let area = placeholder?.parentNode || originalParent;
+      for (let i = 0; i < 3 && area?.parentElement; i++) area = area.parentElement;
+      const next = [...document.querySelectorAll('video')].find(
+        (v) => v !== video && !v.paused && v.duration > 30 && (finished || area?.contains(v))
+      );
       if (!next) return;
       const old = video;
       const { muted, volume: level } = old;
@@ -1697,6 +1741,14 @@
   function releaseSiteVolume() {
     if (SITE !== 'youtube' && SITE !== 'youtube-music') return;
     document.dispatchEvent(new CustomEvent('floatmini:volume', { detail: JSON.stringify({ release: true }) }));
+    setFloatActive(false);
+  }
+
+  // Avisa a ponte do player (yt-volume.js) que a janela abriu/fechou: ela só
+  // informa volume e tempo enquanto a janela está aberta.
+  function setFloatActive(open) {
+    if (SITE !== 'youtube' && SITE !== 'youtube-music') return;
+    document.dispatchEvent(new CustomEvent('floatmini:active', { detail: String(open) }));
   }
 
   function syncSiteVolume(media) {
@@ -1861,12 +1913,14 @@
     const cfg = SITE_CONTROLS[SITE];
     const doc = preparePipDocument(pipWindow, 'fm-music');
 
-    const main = el(doc, 'div', 'fm-music-main');
+    const full = el(doc, 'div', 'fm-full');
+    const art = el(doc, 'div', 'fm-art');
+    const artBg = el(doc, 'div', 'fm-art-bg');
     const cover = el(doc, 'img', 'fm-cover');
     cover.alt = '';
-    const meta = el(doc, 'div', 'fm-meta');
-    const track = el(doc, 'div', 'fm-track');
-    const artist = el(doc, 'div', 'fm-artist');
+    const artControls = el(doc, 'div', 'fm-art-controls');
+    art.append(artBg, cover, artControls);
+
     const progress = el(doc, 'div', 'fm-progress');
     const bar = el(doc, 'div', 'fm-bar');
     progress.append(bar);
@@ -1897,24 +1951,32 @@
     };
     seekArea.addEventListener('pointerup', endSeek);
     seekArea.addEventListener('pointercancel', endSeek);
-    const volume = buildVolumeControl(doc, () => volumeTarget(null));
+    const times = el(doc, 'div', 'fm-times');
+    const timeNow = el(doc, 'span', 'fm-time', '');
+    const timeTotal = el(doc, 'span', 'fm-time', '');
+    times.append(timeNow, timeTotal);
+
+    const meta = el(doc, 'div', 'fm-meta');
+    const track = el(doc, 'div', 'fm-track');
+    const artist = el(doc, 'div', 'fm-artist');
     // "A seguir" aparece só nos últimos segundos da música.
     const upNext = el(doc, 'div', 'fm-upnext');
-    meta.append(track, artist, upNext, seekArea, volume.node);
-    main.append(cover, meta);
+    meta.append(track, artist, upNext);
+    full.append(art, seekArea, times, meta);
 
-    const controls = el(doc, 'div', 'fm-music-controls');
-    const prevBtn = makeButton(doc, '', L('Anterior'), () => siteAction('prev'));
-    setIcon(doc, prevBtn, 'previous');
-    const nextBtn = makeButton(doc, '', L('Próxima'), () => siteAction('next'));
-    setIcon(doc, nextBtn, 'next');
-    const playBtn = makeButton(doc, '', L('Play/Pausar'), () => {
+    const volume = buildVolumeControl(doc, () => volumeTarget(null));
+    const togglePlay = () => {
       if (!siteAction('play')) {
         const v = findMainVideo();
         if (v) v.paused ? v.play() : v.pause();
       }
       setTimeout(refresh, 150);
-    });
+    };
+    const prevBtn = makeButton(doc, '', L('Anterior'), () => siteAction('prev'));
+    setIcon(doc, prevBtn, 'previous');
+    const nextBtn = makeButton(doc, '', L('Próxima'), () => siteAction('next'));
+    setIcon(doc, nextBtn, 'next');
+    const playBtn = makeButton(doc, '', L('Play/Pausar'), togglePlay);
     playBtn.classList.add('fm-primary');
     // Quando o site não expõe o estado, acompanhamos os cliques feitos aqui.
     const local = { shuffle: false, repeat: 'off' };
@@ -1932,14 +1994,22 @@
     });
     shuffleBtn.classList.add('fm-toggle');
     repeatBtn.classList.add('fm-toggle');
+    artControls.append(volume.node, shuffleBtn, prevBtn, playBtn, nextBtn, repeatBtn);
 
-    controls.append(
-      shuffleBtn,
-      prevBtn,
-      playBtn,
-      nextBtn,
-      repeatBtn
-    );
+    // Janela baixa: capa pequena, nome, play redondo e próxima.
+    const mini = el(doc, 'div', 'fm-mini');
+    const miniCover = el(doc, 'img', 'fm-mini-cover');
+    miniCover.alt = '';
+    const miniMeta = el(doc, 'div', 'fm-mini-meta');
+    const miniTrack = el(doc, 'div', 'fm-track fm-mini-track');
+    const miniArtist = el(doc, 'div', 'fm-artist fm-mini-artist');
+    miniMeta.append(miniTrack, miniArtist);
+    const miniPlay = makeButton(doc, '', L('Play/Pausar'), togglePlay);
+    miniPlay.classList.add('fm-primary', 'fm-mini-play');
+    const miniNext = makeButton(doc, '', L('Próxima'), () => siteAction('next'));
+    miniNext.classList.add('fm-mini-next');
+    setIcon(doc, miniNext, 'next');
+    mini.append(miniCover, miniMeta, miniPlay, miniNext);
 
     const renderToggles = () => {
       const state = cfg.state?.() || {};
@@ -1959,7 +2029,7 @@
       setIcon(doc, repeatBtn, repeatMode === 'one' ? 'repeatOne' : 'repeat');
     };
 
-    doc.body.append(main, controls);
+    doc.body.append(full, mini);
 
     const refresh = () => {
       const root = cfg.root();
@@ -1967,16 +2037,29 @@
       track.textContent = (session?.title || cfg.title(root) || cleanTitle(document.title)).trim();
       artist.textContent = (session?.artist || cfg.artist(root) || '').trim();
       const src = session?.cover || cfg.cover(root);
-      if (src && cover.src !== src) cover.src = src;
+      if (src && cover.getAttribute('src') !== src) {
+        cover.src = src;
+        miniCover.src = src;
+        artBg.style.backgroundImage = `url("${String(src).replace(/["\\]/g, '')}")`;
+      }
       cover.style.visibility = src ? 'visible' : 'hidden';
-      setIcon(doc, playBtn, cfg.isPlaying() ? 'pause' : 'play');
+      miniCover.style.visibility = src ? 'visible' : 'hidden';
+      const playing = cfg.isPlaying();
+      setIcon(doc, playBtn, playing ? 'pause' : 'play');
+      setIcon(doc, miniPlay, playing ? 'pause' : 'play');
+      doc.body.classList.toggle('fm-paused', !playing);
       const p = cfg.progress();
-      const pct = p && p.total > 0 ? Math.min(100, (p.current / p.total) * 100) : 0;
+      const known = p && p.total > 0;
+      const pct = known ? Math.min(100, (p.current / p.total) * 100) : 0;
       if (!seeking) bar.style.width = `${pct}%`;
-      const ending = p && p.total > 0 && p.total - p.current <= UP_NEXT_LAST_SECONDS && p.current > 0;
+      timeNow.textContent = known ? formatClock(p.current) : '';
+      timeTotal.textContent = known ? formatClock(p.total) : '';
+      const ending = known && p.total - p.current <= UP_NEXT_LAST_SECONDS && p.current > 0;
       const next = ending ? cfg.upNext?.() : null;
       upNext.textContent = next ? `${L('A seguir: ')}${next.title}${next.artist ? ` · ${next.artist}` : ''}` : '';
       artist.hidden = !!next;
+      miniTrack.textContent = track.textContent;
+      miniArtist.textContent = next ? upNext.textContent : artist.textContent;
       renderToggles();
       volume.refresh();
     };
@@ -2044,6 +2127,7 @@
         const size = IS_MUSIC_SITE ? rememberedSize('music') || MUSIC_WIDGET_SIZE : getVideoPipSize();
         const pipWindow = await docPip.requestWindow({ width: size.width, height: size.height });
         rememberWindowSize(pipWindow, kind);
+        setFloatActive(true);
         if (IS_MUSIC_SITE) buildMusicWidget(pipWindow);
         else buildVideoWindow(pipWindow, video);
         countFloatOpen();
@@ -2373,7 +2457,13 @@
   }
 
   function refreshFloatButton() {
-    if (!document.body) return;
+    if (!document.body || document.hidden) return;
+    // YouTube Music sem lugar na barra: depois de ~20 s tenta só a cada ~10 s
+    // (a busca varre a página toda).
+    if (SITE === 'youtube-music' && (refreshFloatButton.misses || 0) > 10 && !nativeButton?.isConnected) {
+      refreshFloatButton.skip = ((refreshFloatButton.skip || 0) + 1) % 5;
+      if (refreshFloatButton.skip) return;
+    }
 
     if (SITE === 'youtube' || SITE === 'youtube-music') {
       let btn = nativeButton;
@@ -2391,6 +2481,7 @@
       const nativeOk = !!nativeButton?.isConnected;
       updateNativeButtonState();
       if (!nativeOk && SITE === 'youtube-music') refreshFloatButton.misses = (refreshFloatButton.misses || 0) + 1;
+      else if (nativeOk) refreshFloatButton.misses = 0;
       // Só registra depois de ~10s tentando (a barra demora a carregar).
       if (!nativeOk && SITE === 'youtube-music' && refreshFloatButton.misses === 5 && !refreshFloatButton.logged) {
         refreshFloatButton.logged = true;
@@ -2465,6 +2556,7 @@
 
   refreshFloatButton();
   setInterval(refreshFloatButton, 2000);
+  document.addEventListener('visibilitychange', () => !document.hidden && refreshFloatButton());
   // O YouTube troca de página sem recarregar; reposiciona o botão na hora.
   document.addEventListener('yt-navigate-finish', () => setTimeout(refreshFloatButton, 300));
 
