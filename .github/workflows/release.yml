@@ -1,6 +1,8 @@
 name: Release
 
-# Publica sozinho quando a versão de extension/manifest.json muda na main.
+# Publica sozinho NO FIREFOX quando a versão de extension/manifest.json muda
+# na main. O Chrome é manual, depois de testar: Actions → Chrome → Run workflow
+# (ver chrome.yml), que envia o pacote da Release já criada.
 # Fluxo: npm run version:set -- 1.3.4 → commit → push na main. Pronto.
 #
 # Se já existe uma Release com essa versão, não faz nada (pushes comuns
@@ -27,8 +29,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
-      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
       AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
       AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
       GH_TOKEN: ${{ github.token }}
@@ -83,17 +83,6 @@ jobs:
             --api-key "$AMO_API_KEY" \
             --api-secret "$AMO_API_SECRET"
 
-      - name: Publicar na Chrome Web Store
-        if: steps.version.outputs.publish == 'true' && env.CWS_EXTENSION_ID != '' && env.CWS_REFRESH_TOKEN != ''
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
-          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
-          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
-          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
-        run: npx --yes chrome-webstore-upload-cli@4 --source "dist-extension/floatmini-extension-$VERSION.zip"
-
       # Por último: a Release (e a tag) só existe se os envios deram certo,
       # então um push que falhou pode ser repetido.
       - name: Criar tag e Release no GitHub
@@ -118,6 +107,6 @@ jobs:
             echo "## FloatMini $VERSION"
             if [ "$PUBLISH" != "true" ]; then echo "- Versão já lançada antes: nada publicado."; exit 0; fi
             if [ -n "$AMO_API_KEY" ]; then echo "- Firefox: enviado para análise"; else echo "- Firefox: **pulado** (sem segredos AMO_*)"; fi
-            if [ -n "$CWS_REFRESH_TOKEN" ]; then echo "- Chrome Web Store: enviado para análise"; else echo "- Chrome Web Store: **pulado** (sem segredos CWS_*)"; fi
+            echo "- Chrome Web Store: depois de testar, rode Actions → Chrome → Run workflow com a versão $VERSION"
             echo "- Release no GitHub: v$VERSION"
           } >> "$GITHUB_STEP_SUMMARY"
