@@ -216,6 +216,29 @@
     });
     pipWindow.addEventListener('pagehide', save);
   }
+
+  // Tamanho mínimo da janela: menor que isso os controles não cabem.
+  // O navegador deixa encolher quase até sumir; quando a pessoa solta a
+  // borda abaixo do mínimo, a janela volta para o mínimo.
+  const MIN_WINDOW = { music: { width: 260, height: 88 }, video: { width: 240, height: 135 }, feed: { width: 180, height: 300 } };
+  function enforceMinSize(pipWindow, kind) {
+    const min = MIN_WINDOW[kind] || MIN_WINDOW.video;
+    let timer = null;
+    const check = () => {
+      const w = pipWindow.innerWidth;
+      const h = pipWindow.innerHeight;
+      if (!(w > 0 && h > 0) || (w >= min.width && h >= min.height)) return;
+      try {
+        pipWindow.resizeBy(Math.max(0, min.width - w), Math.max(0, min.height - h));
+      } catch {
+        /* navegador não deixa redimensionar: o layout se ajusta pelo CSS */
+      }
+    };
+    pipWindow.addEventListener('resize', () => {
+      clearTimeout(timer);
+      timer = setTimeout(check, 350);
+    });
+  }
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes.pipSize) settings.pipSize = changes.pipSize.newValue || 'auto';
@@ -1051,6 +1074,11 @@
     }
     @media (max-height: 200px) and (max-width: 220px) {
       .fm-mini-cover { display: none; }
+    }
+    /* Se o navegador não deixar voltar ao mínimo: só play e próxima, centralizados. */
+    @media (max-height: 200px) and (max-width: 170px) {
+      .fm-mini { justify-content: center; }
+      .fm-mini-meta { display: none; }
     }
     .fm-volume { display: flex; align-items: center; gap: 4px; }
     .fm-volume .fm-btn { padding: 4px; }
@@ -2127,6 +2155,7 @@
         const size = IS_MUSIC_SITE ? rememberedSize('music') || MUSIC_WIDGET_SIZE : getVideoPipSize();
         const pipWindow = await docPip.requestWindow({ width: size.width, height: size.height });
         rememberWindowSize(pipWindow, kind);
+        enforceMinSize(pipWindow, kind);
         setFloatActive(true);
         if (IS_MUSIC_SITE) buildMusicWidget(pipWindow);
         else buildVideoWindow(pipWindow, video);

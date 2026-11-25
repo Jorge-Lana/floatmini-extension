@@ -1324,3 +1324,17 @@ test('música: janela baixa usa a faixa compacta com o mesmo nome, capa e play',
   assert.equal(nexts, 1);
   assert.match(pipDoc.querySelector('style').textContent, /@media \(max-height: 200px\)/);
 });
+
+test('janela menor que o mínimo volta para o mínimo ao soltar a borda', async () => {
+  const page = loadPage({ url: 'https://open.spotify.com/', html: '<footer data-testid="now-playing-bar"></footer>', active: true });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pip = docPip.window;
+  let size = { w: 130, h: 60 };
+  Object.defineProperty(pip, 'innerWidth', { get: () => size.w, configurable: true });
+  Object.defineProperty(pip, 'innerHeight', { get: () => size.h, configurable: true });
+  pip.resizeBy = (dw, dh) => (size = { w: size.w + dw, h: size.h + dh });
+  pip.dispatchEvent(new pip.Event('resize'));
+  await new Promise((r) => setTimeout(r, 500));
+  assert.deepEqual(size, { w: 260, h: 88 });
+});
