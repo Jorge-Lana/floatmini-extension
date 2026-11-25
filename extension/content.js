@@ -1092,6 +1092,9 @@
       -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 0;
     }
     .fm-volume input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 0; }
+    /* Firefox desenha a trilha por cima do fundo: usa o preenchimento nativo dele. */
+    .fm-volume input[type='range']::-moz-range-track { background: rgba(255, 255, 255, 0.25); height: 3px; border-radius: 3px; }
+    .fm-volume input[type='range']::-moz-range-progress { background: #fff; height: 3px; border-radius: 3px; }
     /* Aleatório/repetir: cinza desligado, branco com pontinho quando ligado. */
     .fm-btn.fm-toggle { color: #737373; position: relative; }
     .fm-btn.fm-toggle.fm-on { color: #fff; opacity: 1; }
@@ -1884,6 +1887,7 @@
     const wrap = el(doc, 'div', 'fm-volume');
     const muteBtn = makeButton(doc, '', L('Mudo (M)'), () => {
       getTarget()?.toggleMute();
+      dragUntil = 0;
       setTimeout(refresh, 50);
     });
     const slider = doc.createElement('input');
@@ -1893,7 +1897,17 @@
     slider.step = '1';
     slider.title = L('Volume (↑ ↓)');
     slider.setAttribute('aria-label', L('Volume'));
+    // Enquanto a pessoa arrasta, o controle não é sobrescrito pelo volume do site.
+    // (Antes usava o foco: depois de mexer, o foco ficava no controle e a bolinha
+    // parava de acompanhar o volume real, enquanto o preenchimento seguia o site.)
+    let dragUntil = 0;
+    const holdDrag = (ms) => (dragUntil = Date.now() + ms);
+    slider.addEventListener('pointerdown', () => holdDrag(60000));
+    const release = () => holdDrag(800);
+    slider.addEventListener('pointerup', release);
+    slider.addEventListener('pointercancel', release);
     slider.addEventListener('input', () => {
+      if (dragUntil < Date.now() + 800) holdDrag(800); // teclado/roda do mouse
       getTarget()?.set(Number(slider.value) / 100);
       paint(Number(slider.value), Number(slider.value) === 0);
     });
@@ -1909,15 +1923,18 @@
       const state = getTarget()?.get();
       wrap.style.display = state ? '' : 'none';
       if (!state) return;
+      if (Date.now() < dragUntil) return;
       const percent = Math.round(state.volume * 100);
-      if (doc.activeElement !== slider) slider.value = String(state.muted ? 0 : percent);
-      paint(percent, state.muted);
+      slider.value = String(state.muted ? 0 : percent);
+      // Bolinha e preenchimento sempre do mesmo valor.
+      paint(Number(slider.value), state.muted);
     };
     const step = (delta) => {
       const t = getTarget();
       const state = t?.get();
       if (!state) return;
       t.set((state.muted ? 0 : state.volume) + delta);
+      dragUntil = 0;
       refresh();
     };
     return { node: wrap, refresh, step, toggleMute: () => muteBtn.click() };
