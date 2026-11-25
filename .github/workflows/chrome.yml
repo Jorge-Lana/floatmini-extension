@@ -1,0 +1,47 @@
+name: Chrome
+
+# Envia para a Chrome Web Store uma versão que já foi lançada no Firefox
+# (usa o pacote da Release do GitHub, o mesmo que foi testado).
+# Actions → Chrome → Run workflow → digite a versão (ex.: 4.0.1).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versão já lançada (ex.: 4.0.1)'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chrome
+  cancel-in-progress: false
+
+jobs:
+  chrome:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - name: Baixar o pacote da Release
+        run: |
+          gh release download "v$VERSION" -R "$GITHUB_REPOSITORY" -p "floatmini-extension-$VERSION.zip" -D dist
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Publicar na Chrome Web Store
+        env:
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+        run: npx --yes chrome-webstore-upload-cli@4 --source "dist/floatmini-extension-$VERSION.zip"
+
+      - name: Resumo
+        if: always()
+        run: |
+          echo "## Chrome Web Store: FloatMini $VERSION enviado para análise" >> "$GITHUB_STEP_SUMMARY"
