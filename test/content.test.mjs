@@ -1324,3 +1324,39 @@ test('música: janela baixa usa a faixa compacta com o mesmo nome, capa e play',
   assert.equal(nexts, 1);
   assert.match(pipDoc.querySelector('style').textContent, /@media \(max-height: 200px\)/);
 });
+
+test('janela menor que o mínimo volta para o mínimo ao soltar a borda', async () => {
+  const page = loadPage({ url: 'https://open.spotify.com/', html: '<footer data-testid="now-playing-bar"></footer>', active: true });
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pip = docPip.window;
+  let size = { w: 130, h: 60 };
+  Object.defineProperty(pip, 'innerWidth', { get: () => size.w, configurable: true });
+  Object.defineProperty(pip, 'innerHeight', { get: () => size.h, configurable: true });
+  pip.resizeBy = (dw, dh) => (size = { w: size.w + dw, h: size.h + dh });
+  pip.dispatchEvent(new pip.Event('resize'));
+  await new Promise((r) => setTimeout(r, 500));
+  assert.deepEqual(size, { w: 260, h: 88 });
+});
+
+test('volume: depois de mexer no controle, bolinha e preenchimento seguem o volume real juntos', async () => {
+  const page = loadPage({ url: 'https://music.youtube.com/watch?v=a', html: YTM_MINIPLAYER + '<video></video>', active: true });
+  fakeMedia(page.document.querySelector('video'));
+  const state = (percent) =>
+    page.document.dispatchEvent(new page.window.CustomEvent('floatmini:volume-state', { detail: JSON.stringify({ percent, muted: false }) }));
+  state(25);
+  const docPip = fakeDocumentPip(page.window);
+  assert.equal(await page.send({ action: 'TOGGLE_FLOAT' }), 'opened');
+  const pipDoc = docPip.window.document;
+  const slider = pipDoc.querySelector('.fm-volume input');
+  slider.focus();
+  slider.dispatchEvent(new docPip.window.Event('pointerdown'));
+  slider.value = '100';
+  slider.dispatchEvent(new docPip.window.Event('input'));
+  slider.dispatchEvent(new docPip.window.Event('pointerup'));
+  assert.equal(pipDoc.activeElement, slider, 'foco continua no controle');
+  state(25); // o site voltou para 25%
+  await new Promise((r) => setTimeout(r, 2100));
+  assert.equal(slider.value, '25');
+  assert.equal(slider.style.getPropertyValue('--fm-fill'), '25%');
+});

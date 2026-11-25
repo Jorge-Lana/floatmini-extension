@@ -216,6 +216,29 @@
     });
     pipWindow.addEventListener('pagehide', save);
   }
+
+  // Tamanho mínimo da janela: menor que isso os controles não cabem.
+  // O navegador deixa encolher quase até sumir; quando a pessoa solta a
+  // borda abaixo do mínimo, a janela volta para o mínimo.
+  const MIN_WINDOW = { music: { width: 260, height: 88 }, video: { width: 240, height: 135 }, feed: { width: 180, height: 300 } };
+  function enforceMinSize(pipWindow, kind) {
+    const min = MIN_WINDOW[kind] || MIN_WINDOW.video;
+    let timer = null;
+    const check = () => {
+      const w = pipWindow.innerWidth;
+      const h = pipWindow.innerHeight;
+      if (!(w > 0 && h > 0) || (w >= min.width && h >= min.height)) return;
+      try {
+        pipWindow.resizeBy(Math.max(0, min.width - w), Math.max(0, min.height - h));
+      } catch {
+        /* navegador não deixa redimensionar: o layout se ajusta pelo CSS */
+      }
+    };
+    pipWindow.addEventListener('resize', () => {
+      clearTimeout(timer);
+      timer = setTimeout(check, 350);
+    });
+  }
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes.pipSize) settings.pipSize = changes.pipSize.newValue || 'auto';
@@ -1052,6 +1075,11 @@
     @media (max-height: 200px) and (max-width: 220px) {
       .fm-mini-cover { display: none; }
     }
+    /* Se o navegador não deixar voltar ao mínimo: só play e próxima, centralizados. */
+    @media (max-height: 200px) and (max-width: 170px) {
+      .fm-mini { justify-content: center; }
+      .fm-mini-meta { display: none; }
+    }
     .fm-volume { display: flex; align-items: center; gap: 4px; }
     .fm-volume .fm-btn { padding: 4px; }
     .fm-volume .fm-btn svg { width: 18px; height: 18px; }
@@ -1064,6 +1092,9 @@
       -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 0;
     }
     .fm-volume input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 0; }
+    /* Firefox desenha a trilha por cima do fundo: usa o preenchimento nativo dele. */
+    .fm-volume input[type='range']::-moz-range-track { background: rgba(255, 255, 255, 0.25); height: 3px; border-radius: 3px; }
+    .fm-volume input[type='range']::-moz-range-progress { background: #fff; height: 3px; border-radius: 3px; }
     /* Aleatório/repetir: cinza desligado, branco com pontinho quando ligado. */
     .fm-btn.fm-toggle { color: #737373; position: relative; }
     .fm-btn.fm-toggle.fm-on { color: #fff; opacity: 1; }
@@ -1856,6 +1887,7 @@
     const wrap = el(doc, 'div', 'fm-volume');
     const muteBtn = makeButton(doc, '', L('Mudo (M)'), () => {
       getTarget()?.toggleMute();
+      dragUntil = 0;
       setTimeout(refresh, 50);
     });
     const slider = doc.createElement('input');
@@ -1865,7 +1897,17 @@
     slider.step = '1';
     slider.title = L('Volume (↑ ↓)');
     slider.setAttribute('aria-label', L('Volume'));
+    // Enquanto a pessoa arrasta, o controle não é sobrescrito pelo volume do site.
+    // (Antes usava o foco: depois de mexer, o foco ficava no controle e a bolinha
+    // parava de acompanhar o volume real, enquanto o preenchimento seguia o site.)
+    let dragUntil = 0;
+    const holdDrag = (ms) => (dragUntil = Date.now() + ms);
+    slider.addEventListener('pointerdown', () => holdDrag(60000));
+    const release = () => holdDrag(800);
+    slider.addEventListener('pointerup', release);
+    slider.addEventListener('pointercancel', release);
     slider.addEventListener('input', () => {
+      if (dragUntil < Date.now() + 800) holdDrag(800); // teclado/roda do mouse
       getTarget()?.set(Number(slider.value) / 100);
       paint(Number(slider.value), Number(slider.value) === 0);
     });
@@ -1881,15 +1923,18 @@
       const state = getTarget()?.get();
       wrap.style.display = state ? '' : 'none';
       if (!state) return;
+      if (Date.now() < dragUntil) return;
       const percent = Math.round(state.volume * 100);
-      if (doc.activeElement !== slider) slider.value = String(state.muted ? 0 : percent);
-      paint(percent, state.muted);
+      slider.value = String(state.muted ? 0 : percent);
+      // Bolinha e preenchimento sempre do mesmo valor.
+      paint(Number(slider.value), state.muted);
     };
     const step = (delta) => {
       const t = getTarget();
       const state = t?.get();
       if (!state) return;
       t.set((state.muted ? 0 : state.volume) + delta);
+      dragUntil = 0;
       refresh();
     };
     return { node: wrap, refresh, step, toggleMute: () => muteBtn.click() };
@@ -2127,6 +2172,7 @@
         const size = IS_MUSIC_SITE ? rememberedSize('music') || MUSIC_WIDGET_SIZE : getVideoPipSize();
         const pipWindow = await docPip.requestWindow({ width: size.width, height: size.height });
         rememberWindowSize(pipWindow, kind);
+        enforceMinSize(pipWindow, kind);
         setFloatActive(true);
         if (IS_MUSIC_SITE) buildMusicWidget(pipWindow);
         else buildVideoWindow(pipWindow, video);
