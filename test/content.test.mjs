@@ -1333,10 +1333,19 @@ test('janela menor que o mínimo volta para o mínimo ao soltar a borda', async 
   let size = { w: 130, h: 60 };
   Object.defineProperty(pip, 'innerWidth', { get: () => size.w, configurable: true });
   Object.defineProperty(pip, 'innerHeight', { get: () => size.h, configurable: true });
-  pip.resizeBy = (dw, dh) => (size = { w: size.w + dw, h: size.h + dh });
+  Object.defineProperty(pip, 'outerWidth', { get: () => size.w, configurable: true });
+  Object.defineProperty(pip, 'outerHeight', { get: () => size.h, configurable: true });
+  let allowed = false; // o navegador só deixa logo depois de um clique
+  pip.resizeTo = (w, h) => {
+    if (!allowed) throw new Error('NotAllowedError');
+    size = { w, h };
+  };
   pip.dispatchEvent(new pip.Event('resize'));
   await new Promise((r) => setTimeout(r, 500));
-  assert.deepEqual(size, { w: 260, h: 88 });
+  assert.deepEqual(size, { w: 130, h: 60 }, 'sem clique: não deixa');
+  allowed = true;
+  pip.document.body.dispatchEvent(new pip.Event('pointerdown', { bubbles: true }));
+  assert.deepEqual(size, { w: 260, h: 88 }, 'no clique: volta ao mínimo');
 });
 
 test('volume: depois de mexer no controle, bolinha e preenchimento seguem o volume real juntos', async () => {

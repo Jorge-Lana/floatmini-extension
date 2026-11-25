@@ -229,7 +229,7 @@
       const h = pipWindow.innerHeight;
       if (!(w > 0 && h > 0) || (w >= min.width && h >= min.height)) return;
       try {
-        pipWindow.resizeBy(Math.max(0, min.width - w), Math.max(0, min.height - h));
+        pipWindow.resizeTo(Math.max(w, min.width) + (pipWindow.outerWidth - w || 0), Math.max(h, min.height) + (pipWindow.outerHeight - h || 0));
       } catch {
         /* navegador não deixa redimensionar: o layout se ajusta pelo CSS */
       }
@@ -238,6 +238,11 @@
       clearTimeout(timer);
       timer = setTimeout(check, 350);
     });
+    // Firefox/Chrome só deixam redimensionar a janela flutuante logo depois de
+    // um clique nela: no primeiro clique com a janela pequena demais, ela volta
+    // para o mínimo.
+    pipWindow.addEventListener('pointerdown', check, true);
+    pipWindow.addEventListener('keydown', check, true);
   }
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
