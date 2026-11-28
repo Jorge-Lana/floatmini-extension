@@ -25,15 +25,15 @@
     "@tailwindcss/vite": "^4.3.5",
     "@vitejs/plugin-react": "^6.3.0",
     "jszip": "^3.10.2",
-    "lucide-react": "^1.75.0",
+    "lucide-react": "^1.80.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tailwindcss": "^4.3.5",
     "vite": "^8.3.8"
   },
   "devDependencies": {
-    "@types/node": "^26.6.6",
-    "@types/react": "^19.3.0",
+    "@types/node": "^26.6.10",
+    "@types/react": "^19.3.1",
     "@types/react-dom": "^19.3.0",
     "jsdom": "^31.0.1",
     "typescript": "^7.0.2"
